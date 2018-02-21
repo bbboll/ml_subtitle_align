@@ -1,0 +1,42 @@
+# datasets
+
+*.data
+*.csv
+*.json
+*.mp3
+*.wav
+*.aac
+
+# LaTeX output
+doc/*.pdf
+
+# LaTeX temporary files
+*.aux
+*.log
+*.toc
+*.idx
+
+# Latexmk
+*.fdb_latexmk
+*.fls
+
+# SyncTeX
+*.synctex.gz
+
+# LaTeX Beamer
+*.snm
+*.vrb
+*.nav
+*.out
+
+# BibTeX
+*.bbl
+*.blg
+
+# Sublime Text Project Files (usually contain absolute paths)
+*.sublime-project
+*.sublime-workspace
+
+# macOS FS hidden files
+.DS_Store
+.MACOS

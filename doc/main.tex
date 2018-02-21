@@ -1,0 +1,24 @@
+% Bastian Boll, Paul Warkentin
+% !TEX program = xelatex
+% !TEX encoding = UTF-8 Unicode
+\documentclass[a4paper,12pt]{scrreprt}
+
+\newcommand*{\RootPath}{.}
+\input{\RootPath/imports}
+\input{\RootPath/settings}
+
+\begin{document}
+
+% custom headings
+\pagestyle{scrheadings}
+\clearscrheadfoot
+\ihead{} % inner head
+\chead{} % center head
+\ohead{} % outer head
+\ifoot{} % innter foot
+\cfoot[]{} % center foot
+\ofoot[]{} % outer foot
+
+\input{\RootPath/body}
+
+\end{document}
