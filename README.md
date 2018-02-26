@@ -4,7 +4,7 @@
 The mining script requires Python 3.* as well as `httplib2` and `beautifulsoup4`
 
 ## Data aquisition
-We use TED-talk transcripts and subtitles as well as their high-quality audio recordings. The audio in this dataset is very high-quality and consists largely of clean spoken words.
+We use TED-talk transcripts and subtitles as well as their audio recordings. The audio in this dataset is very high-quality and consists largely of clean spoken words.
 
 This [kaggle dataset](https://www.kaggle.com/rounakbanik/ted-talks) contains structural metadata about TED talks such as title, url and even transcripts of each talk. The subtitles can be requested from TEDs servers at URLs with shape 
 
