@@ -3,6 +3,8 @@ import json
 from bs4 import BeautifulSoup
 import time
 import os.path
+import urllib.request
+import urllib.error
 
 http = httplib2.Http()
 url_mapping = {}
@@ -66,15 +68,24 @@ if not os.path.isfile(mapping_filename):
 	with open(mapping_filename, "w", encoding="utf-8") as f:
 		json.dump(out, f)
 
+download_urls = json.load(open(mapping_filename))
 
-
-
-# chunk_size = 20
-# for chunk_start in range(0, 10000, chunk_size):
-# 	filename = "data/ted_talks_{}.json".format(chunk_start)
-# 	if not os.path.isfile(filename):
-# 		break
+# download audio for all talks with available metadata
+chunk_size = 20
+for chunk_start in range(0, 10000, chunk_size):
+	filename = "data/ted_talks_{}.json".format(chunk_start)
+	if not os.path.isfile(filename):
+		break
 	
-# 	data = json.load(open(filename))
-# 	for talk in data:
-# 		
+	data = json.load(open(filename))
+	for talk in data:
+		audio_filename = "data/audio/{}.mp3".format(talk["id"])
+		if os.path.isfile(audio_filename):
+			continue
+		if talk["url"] in download_urls.keys():
+			try:
+				fetched_data = urllib.request.urlopen(download_urls[talk["url"]]).read()
+				with open(audio_filename, "wb") as audio_file:
+					audio_file.write(fetched_data)
+			except urllib.error.HTTPError as e:
+				print("Fetching audio failed: {}".format(e.reason))
