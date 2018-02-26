@@ -47,10 +47,9 @@ def fetch_meta_site(num):
 		print("Unable to hit url {}".format(url))
 		return "404", []
 
+# fetch (url -> download link) mapping
 mapping_filename = "data/download_link_mapping.json"
-if os.path.isfile(mapping_filename):
-	pass
-else:
+if not os.path.isfile(mapping_filename):
 	out = {}
 	for i in range(1, 76):
 		print("fetching site {}".format(i))
