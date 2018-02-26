@@ -10,7 +10,7 @@ transcripts = {}
 http = httplib2.Http()
 
 def fetch_id_for_url(url):
-	time.sleep(1.5)
+	time.sleep(2.5)
 	# fetch url
 	try:
 		headers, body = http.request(url)
@@ -43,7 +43,7 @@ def fetch_id_for_url(url):
 		return 0, False
 
 def fetch_subtitle_for_id(talk_id):
-	time.sleep(1.5)
+	time.sleep(2.5)
 	url = "https://hls.ted.com/talks/{}/subtitles/en/full.vtt".format(talk_id)
 	try:
 		headers, body = http.request(url)

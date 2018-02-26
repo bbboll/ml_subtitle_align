@@ -2,7 +2,6 @@
 
 *.data
 *.csv
-*.json
 *.mp3
 *.wav
 *.aac
