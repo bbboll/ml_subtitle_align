@@ -2,7 +2,9 @@ import httplib2
 import json
 from bs4 import BeautifulSoup
 import time
+import os
 import os.path
+import subprocess
 import urllib.request
 import urllib.error
 
@@ -49,8 +51,30 @@ def fetch_meta_site(num):
 		print("Unable to hit url {}".format(url))
 		return "404", []
 
+def fetch_audio_from_url(audio_filename, url):
+	try:
+		fetched_data = urllib.request.urlopen(url).read()
+		with open(audio_filename, "wb") as audio_file:
+			audio_file.write(fetched_data)
+	except urllib.error.HTTPError as e:
+		if e.reason == 'Forbidden' and url.endswith(".mp3"):
+			# try to fetch the mp4 instead and subsequently 
+			# extract the audio from it
+			try:
+				fetched_data = urllib.request.urlopen(url[:-4]+"-light.mp4").read()
+				with open("data/audio/tmp.mp4", "wb") as video_file:
+					video_file.write(fetched_data)
+				command = "ffmpeg -i data/audio/tmp.mp4 -ab 160k -ac 2 -ar 44100 -vn {}".format(audio_filename)
+				subprocess.call(command, shell=True)
+				os.remove("data/audio/tmp.mp4")
+			except urllib.error.HTTPError as ev:
+				print("Fetching audio failed: {}".format(ev.reason))
+				return
+		else:
+			print("Fetching audio failed: {}".format(e.reason))
+
 # fetch (url -> download link) mapping
-mapping_filename = "data/download_link_mapping.json"
+mapping_filename = "data/audio/download_link_mapping.json"
 if not os.path.isfile(mapping_filename):
 	out = {}
 	for i in range(1, 76):
@@ -71,9 +95,11 @@ if not os.path.isfile(mapping_filename):
 download_urls = json.load(open(mapping_filename))
 
 # download audio for all talks with available metadata
+# 380
 chunk_size = 20
 for chunk_start in range(0, 10000, chunk_size):
-	filename = "data/ted_talks_{}.json".format(chunk_start)
+	print("chunk start: {}".format(chunk_start))
+	filename = "data/talks/ted_talks_{}.json".format(chunk_start)
 	if not os.path.isfile(filename):
 		break
 	
@@ -84,9 +110,4 @@ for chunk_start in range(0, 10000, chunk_size):
 			continue
 		if talk["url"] in download_urls.keys():
 			print("Fetching {}".format(talk["url"]))
-			try:
-				fetched_data = urllib.request.urlopen(download_urls[talk["url"]]).read()
-				with open(audio_filename, "wb") as audio_file:
-					audio_file.write(fetched_data)
-			except urllib.error.HTTPError as e:
-				print("Fetching audio failed: {}".format(e.reason))
+			fetch_audio_from_url(audio_filename, download_urls[talk["url"]])

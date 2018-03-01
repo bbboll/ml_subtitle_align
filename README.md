@@ -1,7 +1,7 @@
 # Subtitle Alignment
 
 ## Prerequisites
-The mining script requires Python 3.* as well as `httplib2` and `beautifulsoup4`
+The mining script requires Python 3.* as well as `httplib2` and `beautifulsoup4`. You will also need to install `ffmpeg` for extracting audio from fetched video files.
 
 ## Data aquisition
 We use TED-talk transcripts and subtitles as well as their audio recordings. The audio in this dataset is very high-quality and consists largely of clean spoken words.

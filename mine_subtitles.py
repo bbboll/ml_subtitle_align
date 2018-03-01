@@ -96,7 +96,7 @@ with open('data/kaggle/transcripts.csv', 'r') as csvfile:
 output = []
 chunk_size = 20
 for chunk_start in range(0, len(talks), chunk_size):
-	out_filename = "data/ted_talks_{}.json".format(chunk_start)
+	out_filename = "data/talks/ted_talks_{}.json".format(chunk_start)
 	if os.path.isfile(out_filename):
 		continue
 	for talk in talks[chunk_start:(chunk_start+chunk_size)]:
