@@ -83,6 +83,7 @@ for chunk_start in range(0, 10000, chunk_size):
 		if os.path.isfile(audio_filename):
 			continue
 		if talk["url"] in download_urls.keys():
+			print("Fetching {}".format(talk["url"]))
 			try:
 				fetched_data = urllib.request.urlopen(download_urls[talk["url"]]).read()
 				with open(audio_filename, "wb") as audio_file:
