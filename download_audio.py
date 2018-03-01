@@ -67,7 +67,7 @@ def fetch_audio_from_url(audio_filename, url):
 				command = "ffmpeg -i data/audio/tmp.mp4 -ab 160k -ac 2 -ar 44100 -vn {}".format(audio_filename)
 				subprocess.call(command, shell=True)
 				os.remove("data/audio/tmp.mp4")
-			except urllib.error.HTTPError as ev:
+			except (urllib.error.HTTPError, urllib.error.URLError) as ev:
 				print("Fetching audio failed: {}".format(ev.reason))
 				return
 		else:
