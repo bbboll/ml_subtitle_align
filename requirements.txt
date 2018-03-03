@@ -1,7 +1,6 @@
-scipy==1.0.0
 numpy==1.14.0
 python_speech_features==0.6
-webvtt_py==0.4.1
-beautifulsoup4==4.6.0
 httplib2==0.10.3
 pydub==0.21.0
+scipy==1.0.0
+beautifulsoup4==4.6.0

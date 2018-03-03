@@ -5,6 +5,7 @@
 *.mp3
 *.wav
 *.aac
+*.npy
 
 # LaTeX output
 doc/*.pdf
