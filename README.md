@@ -14,4 +14,4 @@ Hence, we need to find the unique ID associated with each talk in order to fetch
 
 After downloading the kaggle dataset and unpacking it to `ml_subtitle_align/data/kaggle/` you can execute `mine_subtitles.py` which will fetch the subtitles incrementally.
 
-Once all previous steps have (at least partially) finished successfully, you can execute `download_audio.py` which will incrementally fetch all required MP3 audio files from TED and save them into `ml_subtitle_align/data/audio`.
+Once all previous steps have (at least partially) finished successfully, you can execute `download_audio.py` which will incrementally fetch all required MP3 audio files from TED and save them into `ml_subtitle_align/data/audio`. Consequently, `convert_audio.py` will convert all MP3 files from `ml_subtitle_align/data/audio` to WAV for easier handling and save the resulting files in `ml_subtitle_align/data/audio_wav`.
