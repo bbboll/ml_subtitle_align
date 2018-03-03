@@ -64,6 +64,8 @@ def fetch_audio_from_url(audio_filename, url):
 				fetched_data = urllib.request.urlopen(url[:-4]+"-light.mp4").read()
 				with open("data/audio/tmp.mp4", "wb") as video_file:
 					video_file.write(fetched_data)
+				if audio_filename.endswith(".mp3"):
+					audio_filename = audio_filename[:-3]+"wav"
 				command = "ffmpeg -i data/audio/tmp.mp4 -ab 160k -ac 2 -ar 44100 -vn {}".format(audio_filename)
 				subprocess.call(command, shell=True)
 				os.remove("data/audio/tmp.mp4")
@@ -107,6 +109,8 @@ for chunk_start in range(0, 10000, chunk_size):
 	for talk in data:
 		audio_filename = "data/audio/{}.mp3".format(talk["id"])
 		if os.path.isfile(audio_filename):
+			continue
+		if os.path.isfile("data/audio/{}.wav".format(talk["id"])):
 			continue
 		if talk["url"] in download_urls.keys():
 			print("Fetching {}".format(talk["url"]))
