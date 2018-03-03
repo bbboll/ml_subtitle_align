@@ -1,6 +1,8 @@
 import numpy as np
+import os
 import os.path
 import scipy.io.wavfile as wav
+from pydub import AudioSegment
 from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
@@ -31,6 +33,31 @@ class AudioFeatures(object):
 		# load wav audio data
 		(rate, sig) = wav.read(path)
 		self.features = mfcc(sig,rate)
+
+	def load_from_mp3(self, path):
+		"""Load audio features from existing mp3 file.
+
+		Arguments:
+			path (str): Path to an existing mp3 file.
+		"""
+		if not os.path.isfile(path):
+			print("Please download audio first.")
+			exit()
+
+		# convert mp3 to wav
+		try:
+			sound = AudioSegment.from_mp3(path)
+			sound.export(path + ".wav", format="wav")
+		except:
+			print("Conversion to MP3 format failed!")
+			return
+
+		# load wav audio data
+		(rate, sig) = wav.read(path + ".wav")
+		self.features = mfcc(sig,rate)
+
+		# remove wav file
+		os.remove(path + ".wav")
 
 	def load_from_numpy(self, path):
 		"""Load extracted audio features from existing numpy file.

@@ -7,6 +7,7 @@ import os.path
 import subprocess
 import urllib.request
 import urllib.error
+import ssl
 
 http = httplib2.Http()
 url_mapping = {}
@@ -52,16 +53,17 @@ def fetch_meta_site(num):
 		return "404", []
 
 def fetch_audio_from_url(audio_filename, url):
+	context = ssl._create_unverified_context()
 	try:
-		fetched_data = urllib.request.urlopen(url).read()
+		fetched_data = urllib.request.urlopen(url, context=context).read()
 		with open(audio_filename, "wb") as audio_file:
 			audio_file.write(fetched_data)
 	except urllib.error.HTTPError as e:
 		if e.reason == 'Forbidden' and url.endswith(".mp3"):
-			# try to fetch the mp4 instead and subsequently 
+			# try to fetch the mp4 instead and subsequently
 			# extract the audio from it
 			try:
-				fetched_data = urllib.request.urlopen(url[:-4]+"-light.mp4").read()
+				fetched_data = urllib.request.urlopen(url[:-4]+"-light.mp4", context=context).read()
 				with open("data/audio/tmp.mp4", "wb") as video_file:
 					video_file.write(fetched_data)
 				if audio_filename.endswith(".mp3"):
@@ -99,12 +101,12 @@ download_urls = json.load(open(mapping_filename))
 # download audio for all talks with available metadata
 # 380
 chunk_size = 20
-for chunk_start in range(0, 10000, chunk_size):
+for chunk_start in range(2000, 10000, chunk_size):
 	print("chunk start: {}".format(chunk_start))
 	filename = "data/talks/ted_talks_{}.json".format(chunk_start)
 	if not os.path.isfile(filename):
 		break
-	
+
 	data = json.load(open(filename))
 	for talk in data:
 		audio_filename = "data/audio/{}.mp3".format(talk["id"])
