@@ -15,3 +15,5 @@ Hence, we need to find the unique ID associated with each talk in order to fetch
 After downloading the kaggle dataset and unpacking it to `ml_subtitle_align/data/kaggle/` you can execute `mine_subtitles.py` which will fetch the subtitles incrementally.
 
 Once all previous steps have (at least partially) finished successfully, you can execute `download_audio.py` which will incrementally fetch all required MP3 audio files from TED and save them into `ml_subtitle_align/data/audio`. Consequently, `extract_features.py` will extract the audio features from MP3 and WAV files in `ml_subtitle_align/data/audio` and save the resulting files in `ml_subtitle_align/data/audio_features`.
+
+More specifically, [python_speech_features](https://github.com/jameslyons/python_speech_features) is used to extract [MFCC](https://de.wikipedia.org/wiki/Mel_Frequency_Cepstral_Coefficients) features with a 25ms analysis window and 10ms step between successive windows.

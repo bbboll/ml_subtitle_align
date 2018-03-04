@@ -101,7 +101,7 @@ download_urls = json.load(open(mapping_filename))
 # download audio for all talks with available metadata
 # 380
 chunk_size = 20
-for chunk_start in range(2400, 10000, chunk_size):
+for chunk_start in range(0, 10000, chunk_size):
 	print("chunk start: {}".format(chunk_start))
 	filename = "data/talks/ted_talks_{}.json".format(chunk_start)
 	if not os.path.isfile(filename):

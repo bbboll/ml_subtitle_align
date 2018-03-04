@@ -49,7 +49,7 @@ class AudioFeatures(object):
 			sound = AudioSegment.from_mp3(path)
 			sound.export(path + ".wav", format="wav")
 		except:
-			print("Conversion to MP3 format failed!")
+			print("Conversion to WAV format failed!")
 			return
 
 		# load wav audio data
@@ -79,7 +79,7 @@ class AudioFeatures(object):
 			path (str): Path to save features to.
 		"""
 		if self.features is None:
-			print("Please extract features first.")
+			print("Please extract features first. Did it fail?")
 			exit()
 
 		# save features

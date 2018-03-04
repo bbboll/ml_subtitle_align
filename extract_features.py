@@ -24,4 +24,5 @@ for ff in filenames:
 		continue
 
 	# save features
-	features.save_to_numpy(output_path)
+	if not features.features is None:
+		features.save_to_numpy(output_path)
