@@ -9,6 +9,7 @@
 
 # Python cache
 __pycache__/
+*/__pycache__/
 
 # LaTeX output
 doc/*.pdf

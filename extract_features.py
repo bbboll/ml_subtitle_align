@@ -1,6 +1,5 @@
 import os
 from preprocessing.audio_features import AudioFeatures
-from pydub import AudioSegment
 from shutil import copyfile
 
 # extract features from audio
