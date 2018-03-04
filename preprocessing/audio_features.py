@@ -32,7 +32,7 @@ class AudioFeatures(object):
 
 		# load wav audio data
 		(rate, sig) = wav.read(path)
-		self.features = mfcc(sig,rate)
+		self.features = mfcc(sig, samplerate=rate, nfft=2048)
 
 	def load_from_mp3(self, path):
 		"""Load audio features from existing mp3 file.
@@ -54,7 +54,7 @@ class AudioFeatures(object):
 
 		# load wav audio data
 		(rate, sig) = wav.read(path + ".wav")
-		self.features = mfcc(sig,rate)
+		self.features = mfcc(sig, samplerate=rate, nfft=2048)
 
 		# remove wav file
 		os.remove(path + ".wav")
