@@ -7,6 +7,9 @@
 *.aac
 *.npy
 
+# Python cache
+__pycache__/
+
 # LaTeX output
 doc/*.pdf
 

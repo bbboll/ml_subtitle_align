@@ -13,6 +13,8 @@ for ff in filenames:
 	if os.path.isfile(output_path):
 		continue
 
+	print("Extracting features from 'data/audio/{}' ...".format(ff))
+
 	# load mp3 / wav
 	path = "data/audio/{}".format(ff)
 	if ff.endswith(".mp3"):
