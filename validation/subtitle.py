@@ -14,6 +14,7 @@ class Subtitle(object):
 		"""
 		self.raw_string = raw_string
 		self.words_with_timing = self.parse_raw(raw_string)
+		self.current_id = 0
 
 	def parse_raw(self, raw_string):
 		"""
@@ -78,6 +79,15 @@ class Subtitle(object):
 		seconds = int(s[6:8])
 		return float(seconds + 60*minutes + 60*60*hours)
 
+	def get_word_for_timestamp(self, t):
+		if len(self.words_with_timing) <= self.current_id:
+			return None
+		if self.words_with_timing[self.current_id][0] < t:
+			self.current_id += 1
+			return self.words_with_timing[self.current_id][1]
+		return None
+
+
 
 if __name__ == '__main__':
 	"""
@@ -85,14 +95,19 @@ if __name__ == '__main__':
 	"""
 
 	# load metadata from json file
-	talks_json_path = "../data/talks/ted_talks_0.json"
+	talks_json_path = "../data/talks/ted_talks_2000.json"
 	if not os.path.isfile(talks_json_path):
 		print("Please perform subtitle mining first.")
 		exit()
 	talks_json = json.load(open(talks_json_path))
 
-	ind = 18
+	ind = 5
+	for i, t in enumerate(talks_json):
+		if t["id"] == 2011:
+			ind = i
+
 	sub = talks_json[ind]["subtitle"]
+	print(sub)
 
 	s = Subtitle(sub)
 

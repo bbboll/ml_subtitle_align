@@ -2,6 +2,7 @@
 
 ## Prerequisites
 The code in this repo is expected to be run with Python `3.*`. Additional library requirements are listed in `requirements.txt`. You will also need to install `ffmpeg` for extracting audio from fetched video files.
+If you wish to demo subtitle synchronization, you will also need to have [VLC](https://de.wikipedia.org/wiki/VLC_media_player) installed.
 
 ## Data aquisition
 We use TED-talk transcripts and subtitles as well as their audio recordings. The audio in this dataset is very high-quality and consists largely of clean spoken words.
