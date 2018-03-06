@@ -1,9 +1,12 @@
 \chapter{Introduction to the task}
 
-There is a constant need to generate subtitles for video. For large video quantities such as on sites like youtube, machine learning systems have been employed to perform this task for some time now. However, solving the general speech-to-text problem is challenging and hence, human transcription is still used in context where subtitles need to be of consistent quality.
+There is a constant need to generate subtitles for video. For large video quantities such as on sites like youtube, machine learning systems have been employed to perform this task for some time now. However, solving the general speech-to-text problem is challenging and hence, human transcription is still used in contexts where subtitles need to be of consistent quality.
 
-In this work, we aim to solve a problem which is simpler than the general speech-to-text problem: given an audio file $A$ and a finished transcript $\mathcal{T}$, we try to compute time alignment information. Let $\mathcal{T}$ be an $l$-tuple of words $w$ and $A$ be a spoken-word audio signal with known length such that every word $w_i$ in $\mathcal{T}$ occurs in $A$ at time $t_i$ . We try to find the mapping
-\begin{align}
+In this work, we aim to solve a related problem: given an audio file $A$ and a finished transcript $\mathcal{T}$, we try to compute time alignment information. Let $\mathcal{T}$ be an $l$-tuple of words $w$ and $A$ be a spoken-word audio signal with known length such that every word $w_i$ in $\mathcal{T}$ occurs in $A$ at time $t_i$ . We try to find the mapping
+\begin{align*}
 	f&\colon\textrm{Transcripts}_l\to\R^l\\
 	\mathcal{T}&\mapsto f(\mathcal{T})\textrm{ such that }(f(\mathcal{T}))_i=t_i
-\end{align}
+\end{align*}
+Because the transcript is given, this problem is easier to solve than general speech-to-text. Specifically, a respective model does not need to solve the tasks addressed by the language model in a typical speech-to-text system.
+
+However, a good solution for the above problem is still a useful tool in generating subtitles as the tedious and error-prone process of aligning a transcript to the video could be automated.

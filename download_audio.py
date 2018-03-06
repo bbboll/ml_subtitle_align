@@ -61,7 +61,7 @@ def fetch_audio_from_url(audio_filename, url):
 		subprocess.call(command, shell=True)
 		os.remove("data/audio/tmp.mp4")
 	except (urllib.error.HTTPError, urllib.error.URLError) as e:
-		print("Fetching audio failed: {}".format(ev.reason))
+		print("Fetching audio failed: {}".format(e.reason))
 
 # fetch (url -> download link) mapping
 mapping_filename = "data/audio/download_link_mapping.json"
