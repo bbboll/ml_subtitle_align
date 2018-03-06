@@ -21,6 +21,7 @@ for ff in filenames:
 	elif ff.endswith(".wav"):
 		features.load_from_wav(path)
 	else:
+		print("Unexpected filename: {}. Skipping.".format(ff))
 		continue
 
 	# save features

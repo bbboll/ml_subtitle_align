@@ -21,14 +21,12 @@ class TimingDemo(object):
 		"""
 
 		# play audio on seperate thread
-		# warning: this can not be stopped by ctrl+c
 		if os.path.isfile(self.audio_filename):
 			_thread.start_new_thread(os.system, ("cvlc \"{}\"".format(self.audio_filename),))
 		else:
 			print("Audio file {} not found.".format(self.audio_filename))
 		
 		# display subtitles concurrently on the main thread
-		# warning: can only be stopped by ctrl+c
 		start_time = time.time()
 		print("Starting subtitles for talk {}".format(self.audio_filename))
 		while True:
