@@ -5,6 +5,7 @@ import os
 import time
 from math import floor
 from subtitle import Subtitle
+from talk import Talk
 
 class TimingDemo(object):
 	"""
@@ -25,6 +26,7 @@ class TimingDemo(object):
 			_thread.start_new_thread(os.system, ("cvlc \"{}\"".format(self.audio_filename),))
 		else:
 			print("Audio file {} not found.".format(self.audio_filename))
+			exit()
 		
 		# display subtitles concurrently on the main thread
 		start_time = time.time()
@@ -40,19 +42,8 @@ if __name__ == '__main__':
 		print("Please pass a talk ID")
 		exit()
 	talk_id = int(sys.argv[1])
-
-	# load talk subtitle from file
-	file_id = floor(talk_id/20)*20
-	file = json.load(open("../data/talks/ted_talks_{}.json".format(file_id)))
-	talk = None
-	for t in file:
-		if t["id"] == talk_id:
-			talk = t
-	if talk == None:
-		print("Metadata for this ID is missing.")
-		exit()
-	subtitle = Subtitle(talk["subtitle"])
+	talk = Talk(talk_id)
 	
 	# perform demo
-	demo = TimingDemo("../data/audio/{}.wav".format(talk_id), subtitle)
+	demo = TimingDemo("../data/audio/{}.mp3".format(talk_id), talk.subtitle)
 	demo.play()

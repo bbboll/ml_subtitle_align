@@ -35,7 +35,7 @@ class Subtitle(object):
 		out = []
 
 		# find all groups
-		m = re.findall(r'\n{2}(.+)\n{1}(.+\n?)+(?:\n{2}|\Z)', raw_string[7:])
+		m = re.findall(r'\n{2}(.+)\n(.*?)(?=\n{2}|\Z)', raw_string[7:])
 		for group in m:
 			(time_range, text) = group
 			out.extend(self.extract_single_words(time_range, text))
@@ -94,22 +94,12 @@ if __name__ == '__main__':
 	Testing the subtitle data extraction
 	"""
 
-	# load metadata from json file
-	talks_json_path = "../data/talks/ted_talks_2000.json"
-	if not os.path.isfile(talks_json_path):
-		print("Please perform subtitle mining first.")
-		exit()
-	talks_json = json.load(open(talks_json_path))
+	from talk import Talk
 
-	ind = 5
-	for i, t in enumerate(talks_json):
-		if t["id"] == 2011:
-			ind = i
-
-	sub = talks_json[ind]["subtitle"]
-	print(sub)
-
-	s = Subtitle(sub)
+	t = Talk(18)
+	for time, w in t.subtitle.words_with_timing[:100]:
+		print("{} - {}".format(format(time, '.2f'), w))
+	print(t.subtitle.raw_string[:2000])
 
 
 
