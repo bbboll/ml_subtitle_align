@@ -35,7 +35,7 @@ class Subtitle(object):
 		out = []
 
 		# find all groups
-		m = re.findall(r'\n{2}(.+)\n(.*?)(?=\n{2}|\Z)', raw_string[7:])
+		m = re.findall(r'\n{2}(.+)\n((?:.|\n)*?)(?=\n{2}|\Z)', raw_string[7:])
 		for group in m:
 			(time_range, text) = group
 			out.extend(self.extract_single_words(time_range, text))
@@ -63,6 +63,8 @@ class Subtitle(object):
 		# parse time
 		start = self.parse_to_timestamp(time_range[0:12])
 		end = self.parse_to_timestamp(time_range[17:])
+		subtitle_precaution = 0.8 if end-start > 1 else (end-start)/3
+		start += subtitle_precaution
 		duration = end-start
 		offsets = np.linspace(0.0, duration, num=len(tokens))
 		const_off = (duration/len(tokens))/2
