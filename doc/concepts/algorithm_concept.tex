@@ -1,7 +1,0 @@
-\chapter{Concept of the algorithm}
-
-The training dataset consists of approximately 560h of subtitled audio. From this, we extract MFCC features and approximate timestamps for each single word. Additionally, (most) words can easily be transcribed into a phonetic representation by using standard tools (dictionary). Phonetic representations should have a relatively simple relationship to the MFCC coefficients. State of the art acoustic models use shallow or convolutional neural networks to express this relationship. More generally, for each word $w$ we aim to define a (preferably $\mathcal{C}^1$) function \(D_w\colon \R \to \R_+\) such that $D_w(t) \to 0$ iff the audio around time $t$ sounds like the word $w$. For a given transcript $\mathcal{T}$ and audio $A$, we can find the function $f$ as the solution to the minimization problem
-\begin{align*}
-	&\min_x \sum_{j=1}^l D_{w_j}(x_j)\\
-	&\hspace{0.5em}\text{s.t. }x_1\leq x_2\leq \dotsc\leq x_l
-\end{align*}
