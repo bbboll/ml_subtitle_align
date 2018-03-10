@@ -14,7 +14,7 @@ The functions \(D_w\colon \R \to \lbrack 0, \infty)\) can be seen as equivalent 
 	\item $D_w$ corresponds to the probability, that the word $w$ is said as time $t$ in $A$. More specifically, the function mapping said probability $p$ to $D_w(t)$ should be monotonically increasing.
 \end{enumerate}
 
-Divide the audio into intervals of equal size, such that each interval is smaller than the average time span required to say a single word (e.g. 100ms). Label each interval $I_i$ with the probability of it containing a part of $w$. This can be done by any sufficient machine learning method, our specific approach is discussed in section \ref{interval_word_prob}. Given these probabilities $p_i$, we can define $D_w$ through
+Divide the audio into intervals of equal size. Label each interval $I_i$ with the probability of it containing a part of $w$. This can be done by any sufficient machine learning method, our specific approach is discussed in section \ref{interval_word_prob}. Given these probabilities $p_i$, we can define $D_w$ through
 \[
 	D_w(t) = \sum_i p_i \exp(-\sigma(t-t_i)^2)
 \]

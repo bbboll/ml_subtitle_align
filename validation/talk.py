@@ -30,7 +30,7 @@ class Talk(object):
 		if not os.path.isfile("../data/audio_features/{}.npy".format(talk_id)):
 			raise Exception("Audio features for talk {} missing.".format(talk_id))
 
-		self.subtitle = Subtitle(talk["subtitle"])
+		self.subtitle = Subtitle(talk["subtitle"], self.ID)
 		self.transcript = talk["transcript"]
 		self.duration = talk["duration"]
 		self.url = talk["url"]
