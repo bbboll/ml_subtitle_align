@@ -3,6 +3,13 @@ import json
 import nltk
 import numpy as np
 
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	current_dir = os.path.dirname(__file__)
+	return os.path.abspath(os.path.join(current_dir, relpath))
+
 def explore_counts():
 	"""
 	Explore word count data saved in data/talks/counts.json
@@ -27,7 +34,7 @@ def explore_counts():
 		1200 words appear at least 400 times.
 		They cover 0.86 of the text.
 	"""
-	data = json.load(open("data/talks/counts.json"))
+	data = json.load(open(_path("data/talks/counts.json")))
 	filter_words = [".", ",", ";", "-", "!", "?", "--", "(Laughter)", "Laughter"]
 	frequent_words = {k: v for k, v in data.items() if not k in filter_words}
 	total_word_count = np.sum([v for k, v in data.items() if not k in filter_words])
@@ -64,7 +71,7 @@ if __name__ == '__main__':
 	# iterate over talk JSON files
 	chunk_size = 20
 	for chunk_start in range(0, 2560, chunk_size):
-		filename = "data/talks/ted_talks_{}.json".format(chunk_start)
+		filename = _path("data/talks/ted_talks_{}.json".format(chunk_start))
 		if not os.path.isfile(filename):
 			break
 
@@ -77,7 +84,7 @@ if __name__ == '__main__':
 				count_words(talk["transcript"])
 
 	# save word stem counts to file
-	with open("data/talks/counts.json", "w", encoding="utf-8") as f:
+	with open(_path("data/talks/counts.json"), "w", encoding="utf-8") as f:
 		json.dump(words, f)
 	print("Counted {} distinct words in all transcripts combined.".format(len(words)))
 

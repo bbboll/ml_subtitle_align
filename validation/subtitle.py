@@ -4,6 +4,13 @@ import re
 import numpy as np
 from audio_tools import Sound
 
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	parent = os.path.join(os.path.dirname(__file__), "..")
+	return os.path.abspath(os.path.join(parent, relpath))
+
 class Subtitle(object):
 	"""
 	Objects of this class can be used to abstract around 
@@ -38,7 +45,7 @@ class Subtitle(object):
 
 		# find all groups
 		m = re.findall(r'\n{2}(.+)\n((?:.|\n)*?)(?=\n{2}|\Z)', raw_string[7:])
-		with Sound("../data/audio/{}.mp3".format(self.talk_id)) as sound:
+		with Sound(_path("data/audio/{}.mp3".format(self.talk_id))) as sound:
 			for group in m:
 				(time_range, text) = group
 				out.extend(self.extract_single_words(time_range, text, sound))
