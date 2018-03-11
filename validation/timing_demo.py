@@ -3,13 +3,14 @@ import _thread
 import json
 import os
 import time
+import platform
 from math import floor
 from subtitle import Subtitle
 from talk import Talk
 
 class TimingDemo(object):
 	"""
-	Provides functionality to play an audio file while 
+	Provides functionality to play an audio file while
 	concurrently displaying associated subtitles.
 	"""
 	def __init__(self, audio_filename, subtitle):
@@ -23,11 +24,14 @@ class TimingDemo(object):
 
 		# play audio on seperate thread
 		if os.path.isfile(self.audio_filename):
-			_thread.start_new_thread(os.system, ("cvlc \"{}\"".format(self.audio_filename),))
+			if platform.system() == "Darwin":
+				_thread.start_new_thread(os.system, ("/Applications/VLC.app/Contents/MacOS/VLC -I rc \"{}\"".format(self.audio_filename),))
+			else:
+				_thread.start_new_thread(os.system, ("cvlc \"{}\"".format(self.audio_filename),))
 		else:
 			print("Audio file {} not found.".format(self.audio_filename))
 			exit()
-		
+
 		# display subtitles concurrently on the main thread
 		start_time = time.time()
 		print("Starting subtitles for talk {}".format(self.audio_filename))
@@ -43,7 +47,7 @@ if __name__ == '__main__':
 		exit()
 	talk_id = int(sys.argv[1])
 	talk = Talk(talk_id)
-	
+
 	# perform demo
 	demo = TimingDemo("../data/audio/{}.mp3".format(talk_id), talk.subtitle)
 	demo.play()
