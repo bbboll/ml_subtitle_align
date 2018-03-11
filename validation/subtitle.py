@@ -2,19 +2,28 @@ import os.path
 import json
 import re
 import numpy as np
+from audio_tools import Sound
+
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	parent = os.path.join(os.path.dirname(__file__), "..")
+	return os.path.abspath(os.path.join(parent, relpath))
 
 class Subtitle(object):
 	"""
 	Objects of this class can be used to abstract around 
 	subtitle file access.
 	"""
-	def __init__(self, raw_string):
+	def __init__(self, raw_string, talk_id):
 		"""
 		Take a raw string for instantiation
 		"""
 		self.raw_string = raw_string
-		self.words_with_timing = self.parse_raw(raw_string)
 		self.current_id = 0
+		self.talk_id = talk_id
+		self.words_with_timing = self.parse_raw(raw_string)
 
 	def parse_raw(self, raw_string):
 		"""
@@ -36,12 +45,13 @@ class Subtitle(object):
 
 		# find all groups
 		m = re.findall(r'\n{2}(.+)\n((?:.|\n)*?)(?=\n{2}|\Z)', raw_string[7:])
-		for group in m:
-			(time_range, text) = group
-			out.extend(self.extract_single_words(time_range, text))
+		with Sound(_path("data/audio/{}.mp3".format(self.talk_id))) as sound:
+			for group in m:
+				(time_range, text) = group
+				out.extend(self.extract_single_words(time_range, text, sound))
 		return out
 
-	def extract_single_words(self, time_range, text):
+	def extract_single_words(self, time_range, text, sound):
 		"""
 		We extract a mapping
 			time -> (single) word
@@ -63,12 +73,11 @@ class Subtitle(object):
 		# parse time
 		start = self.parse_to_timestamp(time_range[0:12])
 		end = self.parse_to_timestamp(time_range[17:])
-		subtitle_precaution = 0.8 if end-start > 1 else (end-start)/3
-		start += subtitle_precaution
-		duration = end-start
-		offsets = np.linspace(0.0, duration, num=len(tokens))
-		const_off = (duration/len(tokens))/2
-		return zip([start+const_off+off for off in offsets], tokens)
+
+		const_off = 1.1
+		offsets = sound.interpolate_without_silence(start+const_off, end+const_off, len(tokens))
+		return zip([start+off+const_off for off in offsets], tokens)
+
 
 	def parse_to_timestamp(self, s):
 		"""

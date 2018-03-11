@@ -5,6 +5,13 @@ import json
 import time
 import os.path
 
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	current_dir = os.path.dirname(__file__)
+	return os.path.abspath(os.path.join(current_dir, relpath))
+
 talks = []
 transcripts = {}
 http = httplib2.Http()
@@ -58,7 +65,7 @@ def fetch_subtitle_for_id(talk_id):
 		return "", False
 
 # load talk list from kaggle dataset
-with open('data/kaggle/ted_main.csv', 'r') as csvfile:
+with open(_path('data/kaggle/ted_main.csv'), 'r') as csvfile:
 	csvreader = csv.reader(csvfile, delimiter=',')
 	for row in csvreader:
 		# skip csv header
@@ -77,7 +84,7 @@ with open('data/kaggle/ted_main.csv', 'r') as csvfile:
 			"url": url})
 
 # load transcripts from kaggle dataset
-with open('data/kaggle/transcripts.csv', 'r') as csvfile:
+with open(_path('data/kaggle/transcripts.csv'), 'r') as csvfile:
 	csvreader = csv.reader(csvfile, delimiter=',')
 	for row in csvreader:
 		# skip csv header
@@ -96,7 +103,7 @@ with open('data/kaggle/transcripts.csv', 'r') as csvfile:
 output = []
 chunk_size = 20
 for chunk_start in range(0, len(talks), chunk_size):
-	out_filename = "data/talks/ted_talks_{}.json".format(chunk_start)
+	out_filename = _path("data/talks/ted_talks_{}.json".format(chunk_start))
 	if os.path.isfile(out_filename):
 		continue
 	for talk in talks[chunk_start:(chunk_start+chunk_size)]:

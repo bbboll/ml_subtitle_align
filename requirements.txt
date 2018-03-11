@@ -4,3 +4,5 @@ httplib2==0.10.3
 scipy==1.0.0
 beautifulsoup4==4.6.0
 pydub==0.21.0
+nltk==3.2.5
+six==1.11.0

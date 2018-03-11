@@ -1,0 +1,25 @@
+\chapter{The algorithm}
+
+The training dataset consists of approximately 560h of subtitled audio. From this, we extract MFCC features and approximate timestamps for each single word. For each word $w$ we aim to define a $\mathcal{C}^1$ function \(D_w\colon \R \to \lbrack 0, \infty)\) such that $D_w(t)$ is large iff the audio around time $t$ sounds like the word $w$. For a given transcript $\mathcal{T}$ and audio $A$, we can find the function $f$ as the solution to the minimization problem
+\begin{align*}
+	&\min_x -\sum_{j=1}^l D_{w_j}(x_j)\\
+	&\hspace{0.5em}\text{s.t. }x_1\leq x_2\leq \dotsc\leq x_l
+\end{align*}
+
+\section{Defining the distance metric}
+
+The functions \(D_w\colon \R \to \lbrack 0, \infty)\) can be seen as equivalent to a metric for the distance between the sound of the word $w$ and the audio $A$ at $t$. They need to be constructed in a way such that
+\begin{enumerate}
+	\item $D_w$ is guaranteed to be continuously differentiable w.r.t. $t$ for every word $w$.
+	\item $D_w$ corresponds to the probability, that the word $w$ is said as time $t$ in $A$. More specifically, the function mapping said probability $p$ to $D_w(t)$ should be monotonically increasing.
+\end{enumerate}
+
+Divide the audio into intervals of equal size. Label each interval $I_i$ with the probability of it containing a part of $w$. This can be done by any sufficient machine learning method, our specific approach is discussed in section \ref{interval_word_prob}. Given these probabilities $p_i$, we can define $D_w$ through
+\[
+	D_w(t) = \sum_i p_i \exp(-\sigma(t-t_i)^2)
+\]
+for each center point $t_i$ of $I_i$ and a hyperparameter $\sigma$ of the model, corresponding to the assumed length of each word. This construction satisfies the smoothness required for optimization.
+
+\section{Computing probabilities for each interval}
+\label{interval_word_prob}
+

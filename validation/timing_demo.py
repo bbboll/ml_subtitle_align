@@ -8,6 +8,13 @@ from math import floor
 from subtitle import Subtitle
 from talk import Talk
 
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	parent = os.path.join(os.path.dirname(__file__), "..")
+	return os.path.abspath(os.path.join(parent, relpath))
+
 class TimingDemo(object):
 	"""
 	Provides functionality to play an audio file while
@@ -47,7 +54,12 @@ if __name__ == '__main__':
 		exit()
 	talk_id = int(sys.argv[1])
 	talk = Talk(talk_id)
+<<<<<<< HEAD
 
+=======
+	talk.load_subtitle()
+	
+>>>>>>> 0ac60e5570b29e42614e183024bbf4f6eadf3124
 	# perform demo
-	demo = TimingDemo("../data/audio/{}.mp3".format(talk_id), talk.subtitle)
+	demo = TimingDemo(_path("data/audio/{}.mp3".format(talk_id), talk.subtitle))
 	demo.play()

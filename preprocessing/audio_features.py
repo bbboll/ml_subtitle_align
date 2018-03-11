@@ -7,6 +7,13 @@ from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
 
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	parent = os.path.join(os.path.dirname(__file__), "..")
+	return os.path.abspath(os.path.join(parent, relpath))
+
 
 class AudioFeatures(object):
 	"""Objects of this handle extracting and loading audio features from files.
@@ -91,8 +98,8 @@ if __name__ == "__main__":
 	"""
 
 	audio = AudioFeatures()
-	audio.load_from_wav("audio_features_example/english.wav") # https://raw.githubusercontent.com/jameslyons/python_speech_features/master/english.wav
-	audio.save_to_numpy("audio_features_example/english.npy")
+	audio.load_from_wav(_path("preprocessing/audio_features_example/english.wav")) # https://raw.githubusercontent.com/jameslyons/python_speech_features/master/english.wav
+	audio.save_to_numpy(_path("preprocessing/audio_features_example/english.npy"))
 
 	print(audio.features.shape)
 	print(audio.features[:3, :])
