@@ -14,7 +14,7 @@ def _path(relpath):
 def explore_counts():
 	"""
 	Explore word count data saved in data/talks/counts.json
-	Result: 
+	Result:
 		The dataset contains a total of 5287125 (non-distinct) words.
 		32210 words appear at least 2 times.
 		They cover 0.99 of the text.
@@ -40,7 +40,7 @@ def explore_counts():
 	frequent_words = {k: v for k, v in data.items() if not k in filter_words}
 	total_word_count = np.sum([v for k, v in data.items() if not k in filter_words])
 	print("The dataset contains a total of {} (non-distinct) words.".format(total_word_count))
-	
+
 	for count in [1, 2, 49, 149, 199, 249, 299, 349, 399]:
 		frequent_words = {k: v for k, v in frequent_words.items() if v > count}
 		fraction = np.sum([v for _, v in frequent_words.items()]) / total_word_count
