@@ -2,7 +2,7 @@ import os.path
 import json
 import re
 import numpy as np
-from audio_tools import Sound
+from .audio_tools import Sound
 
 def _path(relpath):
 	"""
@@ -97,20 +97,4 @@ class Subtitle(object):
 			self.current_id += 1
 			return self.words_with_timing[self.current_id][1]
 		return None
-
-
-
-if __name__ == '__main__':
-	"""
-	Testing the subtitle data extraction
-	"""
-
-	from talk import Talk
-
-	t = Talk(18)
-	for time, w in t.subtitle.words_with_timing[:100]:
-		print("{} - {}".format(format(time, '.2f'), w))
-	print(t.subtitle.raw_string[:2000])
-
-
 

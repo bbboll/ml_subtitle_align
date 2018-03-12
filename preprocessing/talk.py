@@ -1,4 +1,4 @@
-from subtitle import Subtitle
+from .subtitle import Subtitle
 from math import floor
 import os.path
 import json
@@ -50,9 +50,6 @@ class AllTalks(object):
 		self.count += 1
 		return Talk(talk["id"], talk=talk)
 
-		
-
-
 class Talk(object):
 	"""
 	A talk object binds metadata for a single TED talk in the dataset.
@@ -90,8 +87,3 @@ class Talk(object):
 
 	def load_subtitle(self):
 		self.subtitle = Subtitle(self.raw_subtitle, self.ID)
-
-if __name__ == '__main__':
-	# test talk iteration
-	for talk in AllTalks(limit=50):
-		print("{} -- {}".format(talk.ID, talk.title))

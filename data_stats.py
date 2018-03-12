@@ -2,6 +2,7 @@ import os.path
 import json
 import nltk
 import numpy as np
+from preprocessing.talk import AllTalks
 
 def _path(relpath):
 	"""
@@ -48,7 +49,6 @@ def explore_counts():
 
 nltk.download('punkt')
 
-ids = []
 total_duration = 0
 words = {}
 
@@ -68,25 +68,13 @@ def count_words(text):
 			words[stem] += 1
 
 if __name__ == '__main__':
-	# iterate over talk JSON files
-	chunk_size = 20
-	for chunk_start in range(0, 2560, chunk_size):
-		filename = _path("data/talks/ted_talks_{}.json".format(chunk_start))
-		if not os.path.isfile(filename):
-			break
-
-		# iterate over all talks in the current file
-		data = json.load(open(filename))
-		for talk in data:
-			if not talk["id"] in ids:
-				ids.append(talk["id"])
-				total_duration += int(talk["duration"]) / 60
-				count_words(talk["transcript"])
+	for t in AllTalks():
+		total_duration += t.duration
+		count_words(t.transcript)
 
 	# save word stem counts to file
 	with open(_path("data/talks/counts.json"), "w", encoding="utf-8") as f:
 		json.dump(words, f)
+	
 	print("Counted {} distinct words in all transcripts combined.".format(len(words)))
-
-	print("The total duration of all talks is {0:.2f}h".format(total_duration/60))
-	# 561.54h
+	print("The total duration of all talks is {0:.2f}h".format(total_duration/60)) # 561.54h

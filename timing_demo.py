@@ -5,15 +5,15 @@ import os
 import time
 import platform
 from math import floor
-from subtitle import Subtitle
-from talk import Talk
+from preprocessing.subtitle import Subtitle
+from preprocessing.talk import Talk
 
 def _path(relpath):
 	"""
 	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
 	"""
-	parent = os.path.join(os.path.dirname(__file__), "..")
-	return os.path.abspath(os.path.join(parent, relpath))
+	current_dir = os.path.dirname(__file__)
+	return os.path.abspath(os.path.join(current_dir, relpath))
 
 class TimingDemo(object):
 	"""
@@ -57,5 +57,5 @@ if __name__ == '__main__':
 	talk.load_subtitle()
 
 	# perform demo
-	demo = TimingDemo(_path("data/audio/{}.mp3".format(talk_id), talk.subtitle))
+	demo = TimingDemo(_path("data/audio/{}.mp3".format(talk_id)), talk.subtitle)
 	demo.play()

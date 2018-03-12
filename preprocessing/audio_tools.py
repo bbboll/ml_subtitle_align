@@ -80,9 +80,3 @@ class Sound(object):
 	# 	for x in np.split(self.sig, self.partitions):
 	# 		silent_parts += 1 if np.max(np.linalg.norm(x, axis=1)) > SILENCE_THRESHOLD
 	# 	return silent_parts*PARTITION_LENGHT
-
-
-# if __name__ == '__main__':
-# 	for threshold in [200, 300, 400, 500, 600, 700, 800, 900, 1000]:
-# 		cut_off("segment.wav", threshold)
-# 		# result: I choose a threshold of 800 as a good tradeoff for this loudness
