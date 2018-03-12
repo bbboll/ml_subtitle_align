@@ -81,13 +81,8 @@ class Talk(object):
 		if not os.path.isfile(_path("data/audio_features/{}.npy".format(talk_id))):
 			raise Exception("Audio features for talk {} missing.".format(talk_id))
 
-<<<<<<< HEAD
-		self.title = talk["title"]
-		self.subtitle = Subtitle(talk["subtitle"])
-=======
 		self.subtitle = None
 		self.raw_subtitle = talk["subtitle"]
->>>>>>> 0ac60e5570b29e42614e183024bbf4f6eadf3124
 		self.transcript = talk["transcript"]
 		self.duration = talk["duration"]
 		self.url = talk["url"]

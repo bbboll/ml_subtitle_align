@@ -54,12 +54,8 @@ if __name__ == '__main__':
 		exit()
 	talk_id = int(sys.argv[1])
 	talk = Talk(talk_id)
-<<<<<<< HEAD
-
-=======
 	talk.load_subtitle()
-	
->>>>>>> 0ac60e5570b29e42614e183024bbf4f6eadf3124
+
 	# perform demo
 	demo = TimingDemo(_path("data/audio/{}.mp3".format(talk_id), talk.subtitle))
 	demo.play()
