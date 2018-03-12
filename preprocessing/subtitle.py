@@ -2,6 +2,7 @@ import os.path
 import json
 import re
 import numpy as np
+from nltk import word_tokenize
 from .audio_tools import Sound
 
 def _path(relpath):
@@ -61,12 +62,10 @@ class Subtitle(object):
 		In real spoken audio, each word has an actual time interval 
 		associated with it. We try to give a time offset which is the
 		center of this interval.
-
-
-		TODO: consider nonlinear interpolation
 		"""
-		# find word tokens. These may include punctuation
+		# find word tokens and remove punctuation
 		tokens = re.findall(r'\s*(\S*)\s*', text)
+		tokens = [w for w in word_tokenize(text) if not w in [".", ",", ";", "-", "!", "?", "--"]]
 
 		# TODO: filter speaker annotations
 
@@ -74,7 +73,7 @@ class Subtitle(object):
 		start = self.parse_to_timestamp(time_range[0:12])
 		end = self.parse_to_timestamp(time_range[17:])
 
-		const_off = 1.1
+		const_off = 0.7
 		offsets = sound.interpolate_without_silence(start+const_off, end+const_off, len(tokens))
 		return zip([start+off+const_off for off in offsets], tokens)
 
@@ -95,6 +94,6 @@ class Subtitle(object):
 			return None
 		if self.words_with_timing[self.current_id][0] < t:
 			self.current_id += 1
-			return self.words_with_timing[self.current_id][1]
+			return self.words_with_timing[self.current_id-1][1]
 		return None
 

@@ -61,7 +61,7 @@ class Sound(object):
 		offsets = []
 		cursor = 0
 		word_ind = 0
-		reduced_offsets = np.linspace(reduced_length/num_words/2, reduced_length, num=num_words, endpoint=False)
+		reduced_offsets = np.linspace(reduced_length/num_words*2, reduced_length, num=num_words, endpoint=False)
 		for full_ind, audible in enumerate(bitmap):
 			if audible:
 				cursor += PARTITION_LENGHT
