@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import os.path
+import tensorflow as tf
 
 def _get_full_path(*rel_path):
 	"""Make absolute path to a file or directory in the project folder ml_subtitle_align.
@@ -73,7 +74,7 @@ class Model(object):
 			first_dropout = tf.nn.dropout(first_relu, dropout_prob)
 		else:
 			first_dropout = first_relu
-		max_pool = tf.n.max_pool(first_dropout, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
+		max_pool = tf.nn.max_pool(first_dropout, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
 		second_filter_width = 4
 		second_filter_height = 10
 		second_filter_count = 64
