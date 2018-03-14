@@ -2,10 +2,10 @@ import sys
 import os
 import operator
 import json
+import numpy as np
 from preprocessing.talk import AllTalks
 import nltk
-
-nltk.download('punkt')
+import scipy.stats
 
 def _path(relpath):
 	"""
@@ -15,9 +15,14 @@ def _path(relpath):
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
 INTERVAL_SIZE = 0.4
+DATA_SD = 0.5
+
 frequent_words_path = _path("data/training/frequent_words.json")
 all_words_path = _path("data/talks/counts.json")
 word_timings_path = _path("data/training/word_timings.json")
+
+nltk.download('punkt')
+ps = nltk.stem.PorterStemmer()
 
 def compute_most_frequent_words():
 	if not os.path.isfile(all_words_path):
@@ -36,8 +41,6 @@ def compute_word_timings():
 		compute_most_frequent_words()
 	frequent_words = json.load(open(frequent_words_path))
 
-	ps = nltk.stem.PorterStemmer()
-
 	# flush training data to file for each talk
 	word_timings = {}
 	for talk in AllTalks():
@@ -50,6 +53,9 @@ def compute_word_timings():
 	with open(word_timings_path, "w", encoding="utf-8") as f:
 		json.dump(word_timings, f)
 
+def compute_word_probability(i, distrib):
+	return distrib.cdf((i+1)*INTERVAL_SIZE)-distrib.cdf(i*INTERVAL_SIZE)
+
 
 if __name__ == '__main__':
 	if len(sys.argv) != 2:
@@ -60,7 +66,35 @@ if __name__ == '__main__':
 	if not os.path.isdir(_path(savepath)):
 		os.mkdir(savepath)
 
+	# load or generate word timings
 	if not os.path.isfile(word_timings_path):
 		compute_word_timings()
-	
+	frequent_words = json.load(open(frequent_words_path))
+	word_timings = json.load(open(word_timings_path))
 
+	mfcc_per_interval = int(INTERVAL_SIZE / 0.005)
+	features = np.zeros((0,mfcc_per_interval,13))
+	labels = np.zeros((0,1500))
+
+	for talk in AllTalks(limit=5):
+		mfcc_features = np.load(talk.features_path())
+		interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
+		mfcc_features = mfcc_features[:interval_count*mfcc_per_interval]
+		mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
+		features = np.concatenate((features, mfcc_features), axis=0)
+
+		talk_labels = np.zeros((1500, interval_count))
+		for (w, t) in word_timings[str(talk.ID)]:
+			distrib = scipy.stats.norm(t, DATA_SD)
+			word_ind = None
+			try:
+				word_ind = frequent_words.index(ps.stem(w))
+			except ValueError:
+				print("Could not find word {}".format(w))
+				continue
+			interval_ind = int(t // INTERVAL_SIZE)
+			index_range = [interval_ind+i for i in range(-2,2) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
+			talk_labels[word_ind][index_range] += np.array([compute_word_probability(i, distrib) for i in index_range])
+		labels = np.concatenate((labels, talk_labels.T), axis=0)
+	print(features.shape)
+	print(labels.shape)

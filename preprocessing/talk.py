@@ -91,3 +91,6 @@ class Talk(object):
 
 	def load_subtitle(self):
 		self.subtitle = Subtitle(self.raw_subtitle, self.ID)
+
+	def features_path(self):
+		return _path("data/audio_features/{}.npy".format(self.ID))
