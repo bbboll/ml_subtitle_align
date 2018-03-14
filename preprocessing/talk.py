@@ -38,6 +38,7 @@ class AllTalks(object):
 			self.chunk_iter = iter(self.chunk)
 
 		talk = None
+		talk_obj = None
 		try:
 			talk = next(self.chunk_iter)
 			if talk["id"] in self.seen_ids:
@@ -48,7 +49,10 @@ class AllTalks(object):
 			self.chunk = None
 			return self.__next__()
 		self.count += 1
-		return Talk(talk["id"], talk=talk)
+		try:
+			return Talk(talk["id"], talk=talk)
+		except:
+			return self.__next__()
 
 class Talk(object):
 	"""
@@ -81,7 +85,7 @@ class Talk(object):
 		self.subtitle = None
 		self.raw_subtitle = talk["subtitle"]
 		self.transcript = talk["transcript"]
-		self.duration = talk["duration"]
+		self.duration = int(talk["duration"])
 		self.url = talk["url"]
 		self.title = talk["title"]
 

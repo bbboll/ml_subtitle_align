@@ -69,7 +69,7 @@ def count_words(text):
 
 if __name__ == '__main__':
 	for t in AllTalks():
-		total_duration += t.duration
+		total_duration += t.duration / 60
 		count_words(t.transcript)
 
 	# save word stem counts to file
