@@ -8,6 +8,7 @@ import extract_training_data as extractor
 from preprocessing.talk import AllTalks
 import nltk
 import scipy.stats
+from sklearn.model_selection import train_test_split
 
 
 def _get_full_path(*rel_path):
@@ -30,36 +31,71 @@ frequent_words = json.load(open(extractor.frequent_words_path))
 word_timings = json.load(open(extractor.word_timings_path))
 mfcc_per_interval = int(extractor.INTERVAL_SIZE / 0.005)
 
+def compute_full_vector_labels(talk, interval_count):
+	"""
+	For each interval, return a vector of shape (,1500) containing every
+	probability for each single word.
+	"""
+	talk_labels = np.zeros((1500, interval_count))
+	for (w, t) in word_timings[str(talk.ID)]:
+		distrib = scipy.stats.norm(t, extractor.DATA_SD)
+		word_ind = None
+		try:
+			word_ind = frequent_words.index(extractor.ps.stem(w))
+		except ValueError:
+			print("Could not find word {}".format(w))
+			continue
+		interval_ind = int(t // extractor.INTERVAL_SIZE)
+		index_range = [interval_ind+i for i in range(-2,2) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
+		talk_labels[word_ind][index_range] += np.array([extractor.compute_word_probability(i, distrib) for i in index_range])
+	return talk_labels.T
+
+def compute_categorical_labels(talk, interval_count):
+	"""
+	For each interval, return an int64 (categorical) label.
+	"""
+	talk_labels = []
+	for i in range(interval_count):
+		midpoint = (i+0.5)*extractor.INTERVAL_SIZE
+		closest_word = None
+		diff = float(talk.duration)
+		for (w, t) in word_timings[str(talk.ID)]:
+			if diff > abs(midpoint-t):
+				diff = abs(midpoint-t)
+				closest_word = w
+		word_ind = frequent_words.index(extractor.ps.stem(w))
+		talk_labels.append(word_ind)
+	return np.array(talk_labels, dtype=np.int64)
+
 def xbatches(batch_size, training=True):
 	"""Batch MFCC data, labels together.
 	"""
+	talk_limit = 250
+	all_ids = [talk.ID for talk in AllTalks(limit=talk_limit)]
+	train_ids, test_ids = train_test_split(all_ids, test_size=0.1, shuffle=True)
 	features = np.zeros((0,mfcc_per_interval,13))
-	labels = np.zeros((0,1500))
-	talks = AllTalks(limit=5)
+	labels = np.array([])
+	talks = AllTalks(limit=talk_limit)
 
 	try:
 		while True:
 			if labels.shape[0] < batch_size:
 				talk = next(talks)
+				if training and not talk.ID in train_ids:
+					continue
+				if not training and talk.ID in train_ids:
+					continue
+				if not str(talk.ID) in word_timings:
+					continue
 				mfcc_features = np.load(talk.features_path())
 				interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
 				mfcc_features = mfcc_features[:interval_count*mfcc_per_interval]
 				mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
 				features = np.concatenate((features, mfcc_features), axis=0)
 
-				talk_labels = np.zeros((1500, interval_count))
-				for (w, t) in word_timings[str(talk.ID)]:
-					distrib = scipy.stats.norm(t, extractor.DATA_SD)
-					word_ind = None
-					try:
-						word_ind = frequent_words.index(extractor.ps.stem(w))
-					except ValueError:
-						print("Could not find word {}".format(w))
-						continue
-					interval_ind = int(t // extractor.INTERVAL_SIZE)
-					index_range = [interval_ind+i for i in range(-2,2) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
-					talk_labels[word_ind][index_range] += np.array([extractor.compute_word_probability(i, distrib) for i in index_range])
-				labels = np.concatenate((labels, talk_labels.T), axis=0)
+				#talk_labels = compute_full_vector_labels(talk, interval_count)
+				talk_labels = compute_categorical_labels(talk, interval_count)
+				labels = np.concatenate((labels, talk_labels))
 			else:
 				yield (
 					features[:batch_size],
@@ -86,7 +122,7 @@ def main():
 	# all_features = np.load(_get_full_path("data", "tmp", "x_all.npy")) # tbc
 	# all_labels = np.load(_get_full_path("data", "tmp", "y_all.npy")) # tbc
 	num_labels = 1500
-	batch_size = 100
+	batch_size = 180
 
 	# split features and labels into training and validation set or load presplitted data
 	# train_features = np.load(_get_full_path("data", "tmp", "x_train.npy")) # tbc
@@ -105,7 +141,8 @@ def main():
 	logits, dropout_prob = model.train_model(input_3d)
 
 	# define loss and optimizer
-	ground_truth_input = tf.placeholder(tf.int64, [batch_size, 1500], name="ground_truth_input")
+	# ground_truth_input = tf.placeholder(tf.int64, [batch_size, 1500], name="ground_truth_input")
+	ground_truth_input = tf.placeholder(tf.int64, [None], name="ground_truth_input")
 
 	# create back propagation and training evaluation machinery in the graph
 	with tf.name_scope("cross_entropy"):
@@ -149,10 +186,11 @@ def main():
 	tf.train.write_graph(sess.graph_def, _get_full_path("model", "train"), "graph.pbtxt")
 
 	# training loop
-	validation_step_interval = 200 # tbc - interval how often to evaluate model
+	validation_step_interval = 3 # tbc - interval how often to evaluate model
 	save_step_interval = 100 # tbc - interval how often the model should be saved
-	training_steps_list = [1000, 300] # tbc - number of training steps to do with associated learning rate
-	learning_rates_list = [0.001, 0.0001] # tbc - learning rates, associated with `training_steps_list`
+	training_steps_list = [6, 6, 4]
+	#training_steps_list = [1000, 300] # tbc - number of training steps to do with associated learning rate
+	learning_rates_list = [0.0003, 0.0001, 0.00002] # tbc - learning rates, associated with `training_steps_list`
 	training_steps_max = np.sum(training_steps_list)
 	for training_step in range(start_step, training_steps_max + 1):
 		# get current learning rate
@@ -171,7 +209,7 @@ def main():
 					input_3d: train_input,
 					ground_truth_input: train_ground_truth,
 					learning_rate_input: learning_rate_value,
-					dropout_prob: 0.5
+					dropout_prob: 0.8
 				}
 			)
 		train_writer.add_summary(train_summary, training_step)
