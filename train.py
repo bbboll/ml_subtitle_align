@@ -2,7 +2,12 @@ from model.model import Model
 import numpy as np
 import os
 import os.path
+import json
 import tensorflow as tf
+import extract_training_data as extractor
+from preprocessing.talk import AllTalks
+import nltk
+import scipy.stats
 
 
 def _get_full_path(*rel_path):
@@ -18,17 +23,52 @@ def _get_full_path(*rel_path):
 	path = os.path.dirname(path) # `.../ml_subtitle_align/`
 	return os.path.join(path, *rel_path)
 
+if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extractor.word_timings_path):
+	print("Execute extract_training_data first.")
+	exit()
+frequent_words = json.load(open(extractor.frequent_words_path))
+word_timings = json.load(open(extractor.word_timings_path))
+mfcc_per_interval = int(extractor.INTERVAL_SIZE / 0.005)
 
-def xbatches(mfcc, labels, batch_size):
+def xbatches(batch_size, training=True):
 	"""Batch MFCC data, labels together.
 	"""
-	for ii in range(0, len(mfcc) // batch_size):
-		offset = ii * batch_size
-		yield (
-			mfcc[offset:(offset + batch_size)],
-			labels[offset:(offset + batch_size)]
-		)
+	features = np.zeros((0,mfcc_per_interval,13))
+	labels = np.zeros((0,1500))
+	talks = AllTalks(limit=5)
 
+	try:
+		while True:
+			if labels.shape[0] < batch_size:
+				talk = next(talks)
+				mfcc_features = np.load(talk.features_path())
+				interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
+				mfcc_features = mfcc_features[:interval_count*mfcc_per_interval]
+				mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
+				features = np.concatenate((features, mfcc_features), axis=0)
+
+				talk_labels = np.zeros((1500, interval_count))
+				for (w, t) in word_timings[str(talk.ID)]:
+					distrib = scipy.stats.norm(t, extractor.DATA_SD)
+					word_ind = None
+					try:
+						word_ind = frequent_words.index(extractor.ps.stem(w))
+					except ValueError:
+						print("Could not find word {}".format(w))
+						continue
+					interval_ind = int(t // extractor.INTERVAL_SIZE)
+					index_range = [interval_ind+i for i in range(-2,2) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
+					talk_labels[word_ind][index_range] += np.array([extractor.compute_word_probability(i, distrib) for i in index_range])
+				labels = np.concatenate((labels, talk_labels.T), axis=0)
+			else:
+				yield (
+					features[:batch_size],
+					labels[:batch_size]
+				)
+				features = features[batch_size:]
+				labels = labels[batch_size:]
+	except StopIteration:
+		return
 
 def main():
 	tf.logging.set_verbosity(tf.logging.INFO)
@@ -43,20 +83,21 @@ def main():
 	# `all_features` and `all_labels` are 3d numpy arrays with
 	#   shape[0] <- number of samples
 	#   shape[1], shape[2] <- shape of mfcc data
-	all_features = np.load(_get_full_path("data", "tmp", "x_all.npy")) # tbc
-	all_labels = np.load(_get_full_path("data", "tmp", "y_all.npy")) # tbc
-	num_labels = 3 # tbc
+	# all_features = np.load(_get_full_path("data", "tmp", "x_all.npy")) # tbc
+	# all_labels = np.load(_get_full_path("data", "tmp", "y_all.npy")) # tbc
+	num_labels = 1500
+	batch_size = 100
 
 	# split features and labels into training and validation set or load presplitted data
-	train_features = np.load(_get_full_path("data", "tmp", "x_train.npy")) # tbc
-	train_labels = np.load(_get_full_path("data", "tmp", "y_train.npy")) # tbc
-	val_features = np.load(_get_full_path("data", "tmp", "x_val.npy")) # tbc
-	val_labels = np.load(_get_full_path("data", "tmp", "y_val.npy")) # tbc
+	# train_features = np.load(_get_full_path("data", "tmp", "x_train.npy")) # tbc
+	# train_labels = np.load(_get_full_path("data", "tmp", "y_train.npy")) # tbc
+	# val_features = np.load(_get_full_path("data", "tmp", "x_val.npy")) # tbc
+	# val_labels = np.load(_get_full_path("data", "tmp", "y_val.npy")) # tbc
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
 
-	input_3d = tf.placeholder(tf.float32, [None, all_features.shape[1], all_features.shape[2]], name="input_3d")
+	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 
 	model = Model()
 	model.set_config(label_count=num_labels)
@@ -64,7 +105,7 @@ def main():
 	logits, dropout_prob = model.train_model(input_3d)
 
 	# define loss and optimizer
-	ground_truth_input = tf.placeholder(tf.int64, [None], name="ground_truth_input")
+	ground_truth_input = tf.placeholder(tf.int64, [batch_size, 1500], name="ground_truth_input")
 
 	# create back propagation and training evaluation machinery in the graph
 	with tf.name_scope("cross_entropy"):
@@ -108,7 +149,6 @@ def main():
 	tf.train.write_graph(sess.graph_def, _get_full_path("model", "train"), "graph.pbtxt")
 
 	# training loop
-	batch_size = 100
 	validation_step_interval = 200 # tbc - interval how often to evaluate model
 	save_step_interval = 100 # tbc - interval how often the model should be saved
 	training_steps_list = [1000, 300] # tbc - number of training steps to do with associated learning rate
@@ -124,7 +164,7 @@ def main():
 				break
 
 		# run the graph with batches of data
-		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(train_features, train_labels, batch_size)):
+		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(batch_size, training=True)):
 			train_summary, train_accuracy, cross_entropy_value, _, _ = sess.run(
 				[merged_summaries, evaluation_step, cross_entropy_mean, train_step, increment_global_step],
 				feed_dict={
@@ -144,7 +184,7 @@ def main():
 		if training_step % validation_step_interval == 0 or is_last_step:
 			total_accuracy = 0
 			total_cf_matrix = None
-			for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(val_features, val_labels, batch_size)):
+			for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False)):
 				val_summary, val_accuracy, cf_matrix = sess.run(
 					[merged_summaries, evaluation_step, confusion_matrix],
 					feed_dict={

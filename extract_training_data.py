@@ -58,14 +58,6 @@ def compute_word_probability(i, distrib):
 
 
 if __name__ == '__main__':
-	if len(sys.argv) != 2:
-		print("No interval size was given. Default is {}sec".format(INTERVAL_SIZE))
-	else:
-		INTERVAL_SIZE = float(sys.argv[1])
-	savepath = "data/training/{}".format(int(INTERVAL_SIZE*1000))
-	if not os.path.isdir(_path(savepath)):
-		os.mkdir(savepath)
-
 	# load or generate word timings
 	if not os.path.isfile(word_timings_path):
 		compute_word_timings()
