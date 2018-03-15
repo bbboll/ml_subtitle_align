@@ -70,7 +70,7 @@ def compute_categorical_labels(talk, interval_count):
 def xbatches(batch_size, training=True):
 	"""Batch MFCC data, labels together.
 	"""
-	talk_limit = 250
+	talk_limit = None
 	all_ids = [talk.ID for talk in AllTalks(limit=talk_limit)]
 	train_ids, test_ids = train_test_split(all_ids, test_size=0.1, shuffle=True)
 	features = np.zeros((0,mfcc_per_interval,13))
@@ -188,9 +188,9 @@ def main():
 	# training loop
 	validation_step_interval = 3 # tbc - interval how often to evaluate model
 	save_step_interval = 100 # tbc - interval how often the model should be saved
-	training_steps_list = [6, 6, 4]
+	training_steps_list = [1, 1]
 	#training_steps_list = [1000, 300] # tbc - number of training steps to do with associated learning rate
-	learning_rates_list = [0.0003, 0.0001, 0.00002] # tbc - learning rates, associated with `training_steps_list`
+	learning_rates_list = [0.0003, 0.0001] # tbc - learning rates, associated with `training_steps_list`
 	training_steps_max = np.sum(training_steps_list)
 	for training_step in range(start_step, training_steps_max + 1):
 		# get current learning rate
