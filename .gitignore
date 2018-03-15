@@ -7,6 +7,10 @@
 *.aac
 *.npy
 
+# training logs
+model/retrain_logs/*
+model/train/*
+
 # Python cache
 __pycache__/
 */__pycache__/
