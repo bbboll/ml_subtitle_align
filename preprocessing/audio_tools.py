@@ -7,6 +7,14 @@ import os
 SILENCE_THRESHOLD = 800
 PARTITION_LENGHT = 0.02
 
+def _path(relpath):
+	"""
+	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
+	"""
+	parent = os.path.join(os.path.dirname(__file__), "..")
+	return os.path.abspath(os.path.join(parent, relpath))
+
+
 def convert_to_wav(in_filename):
 	sound = AudioSegment.from_mp3(in_filename)
 	sound.export(in_filename[:-3]+"wav", format="wav")
@@ -71,6 +79,20 @@ class Sound(object):
 				offsets.append(full_ind*PARTITION_LENGHT+cursor-reduced_offsets[word_ind])
 				word_ind += 1
 		return offsets
+
+	def export_interval(self, outpath, start, length=0.4):
+		# export audio snippet
+		sound = AudioSegment.from_mp3(self.mp3_filepath)
+		snippet = sound[int(start*1000):int(start*1000+length*1000)]
+		snippet.export(outpath+".mp3", format="mp3")
+		
+		# export mfcc data
+		(_, filename) = os.path.split(self.mp3_filepath)
+		talk_id = filename[:-4]
+		features = np.load(_path("data/audio_features/"+talk_id+".npy"))
+		np.save(outpath+".npy", features[int(200*start):int(start*200+length*200)])
+
+
 
 	# def silence_in_interval(self, start, end):
 	# 	"""

@@ -48,3 +48,6 @@ doc/*.pdf
 # macOS FS hidden files
 .DS_Store
 .MACOS
+
+# don't ignore demo files
+!snippet_demo/*
