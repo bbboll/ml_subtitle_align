@@ -30,20 +30,29 @@ if __name__ == '__main__':
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
 	# load input
-	mfcc_features = np.load(_path("snippet_demo/snippet.npy"))
-	mfcc_features = mfcc_features.reshape((1,80,13))
+	mfcc_per_interval = int(extractor.INTERVAL_SIZE / 0.005)
+	mfcc_features = np.load(_path("data/audio_features/1011.npy"))
+	interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
+	mfcc_features = mfcc_features[:interval_count*mfcc_per_interval]
+	mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
 
-	val_prediction = sess.run(
-		[prediction],
-		feed_dict={
-			input_3d: mfcc_features
-		}
-	)
-	val_prediction = np.array(val_prediction).reshape((1500,))
-	n = 10
-	idx = (-val_prediction).argsort()[:n].astype(int)
-	print(" --- The computed {} most likely words in the snippet are --- ".format(n))
-	for i in idx:
-		print("{} - {}".format(val_prediction[i], frequent_words[i]))
+	# perform prediction
+	prediction_vals = np.zeros((0,1500))
+	batch_size = 50
+	while mfcc_features.shape[0] > 0:
+		if batch_size > mfcc_features.shape[0]:
+			batch_size = mfcc_features.shape[0]
+		chunk = mfcc_features[:batch_size]
+		mfcc_features = mfcc_features[batch_size:]
+		val_prediction = sess.run(
+			[prediction],
+			feed_dict={
+				input_3d: chunk
+			}
+		)
+		prediction_vals = np.concatenate((prediction_vals, np.array(val_prediction).reshape((batch_size, 1500))), axis=0)
 
+	print("Prediction for {} intervals was successful.\n Starting optimization...".format(prediction_vals.shape[0]))
+
+	# TODO: optimization
 
