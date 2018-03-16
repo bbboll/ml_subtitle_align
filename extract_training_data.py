@@ -15,7 +15,7 @@ def _path(relpath):
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
 INTERVAL_SIZE = 0.4
-DATA_SD = 0.5
+DATA_SD = 0.4
 
 frequent_words_path = _path("data/training/frequent_words.json")
 all_words_path = _path("data/talks/counts.json")

@@ -117,9 +117,10 @@ def main():
 	# open Tensorboard in browser:
 	#   http://127.0.0.1:6006
 
-	batch_size = 100
+	batch_size = 300
 	categorical_model = False
 	keep_probability = 0.3
+	model_load_checkpoint = _get_full_path("model", "train", "model.ckpt-1")
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
@@ -175,8 +176,8 @@ def main():
 	tf.global_variables_initializer().run()
 
 	start_step = 1
-	if False:
-		model.load_variables_from_checkpoint(session, _get_full_path("model", "train", "model.ckpt"))
+	if model_load_checkpoint != None:
+		model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 		start_step = global_step.eval(session=sess)
 
 	tf.logging.info("Training from step: %d", start_step)
@@ -186,12 +187,13 @@ def main():
 
 	# training loop
 	save_step_interval = 100 # tbc - interval how often the model should be saved
-	passes_list = [1, 1]
+	passes_list = [4, 2]
 	batch_log_interval = 1000
 	save_interval = 3000
 	#passes_list = [1000, 300] # tbc - number of training steps to do with associated learning rate
 	learning_rates_list = [0.0003, 0.0001] # tbc - learning rates, associated with `passes_list`
 	passes_max = np.sum(passes_list)
+	global_batch_step = 0
 	for data_pass in range(start_step, passes_max + 1):
 		# get current learning rate
 		passes_sum = 0
@@ -214,14 +216,18 @@ def main():
 			)
 			if batch_ii % batch_log_interval == 0:
 				train_writer.add_summary(train_summary, data_pass)
-				tf.logging.info("Step #%d: rate %f, accuracy %.1f%%, cross entropy %f" %
-					(batch_ii, learning_rate_value, train_accuracy * 100, loss_value)
-				)
+				if categorical_model:
+					tf.logging.info("Step #%d: rate %f, accuracy %.1f%%, cross entropy %f" %
+						(batch_ii, learning_rate_value, train_accuracy * 100, loss_value)
+					)
+				else:
+					tf.logging.info("Pass {} - batch {}: rate {}, mean squared error {}".format(data_pass, batch_ii, learning_rate_value, loss_value))
 			if batch_ii % save_interval == 0:
+				global_batch_step += 1
 				# save model checkpoint
 				checkpoint_path = _get_full_path("model", "train", "model.ckpt")
 				tf.logging.info("Saving to `%s-%d`", checkpoint_path, data_pass)
-				saver.save(sess, checkpoint_path, global_step=data_pass)
+				saver.save(sess, checkpoint_path, global_step=global_batch_step)
 
 		# evaluate
 		total_accuracy = 0
@@ -239,8 +245,10 @@ def main():
 			validation_batches += 1
 			total_accuracy += val_accuracy
 		validation_writer.add_summary(val_summary, data_pass)
-		tf.logging.info("Step %d: Validation accuracy = %.1f%%" % (data_pass, (total_accuracy/validation_batches) * 100))
-
+		if categorical_model:
+			tf.logging.info("Step %d: Validation accuracy = %.1f%%" % (data_pass, (total_accuracy/validation_batches) * 100))
+		else:
+			tf.logging.info("Pass {}: Mean squared error {}".format(data_pass, (total_accuracy/validation_batches) * 100))
 		# save model checkpoint
 		checkpoint_path = _get_full_path("model", "train", "model.ckpt")
 		tf.logging.info("Saving to `%s-%d`", checkpoint_path, data_pass)
