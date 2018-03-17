@@ -29,8 +29,9 @@ def cost_function(x, probs, interval_count, word_indices):
 	out = 0.0
 	for word_ind, t in enumerate(x):
 		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
-		interval_diffs = interval_midpoints-t
-		interval_scalars = np.exp(-0.01*interval_diffs**2)
+		# interval_diffs = interval_midpoints-t
+		# interval_scalars = np.exp(-0.01*interval_diffs**2)
+		interval_scalars = scipy.stats.norm(t, extractor.INTERVAL_SIZE).pdf(interval_midpoints)
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
 	return -out
 
