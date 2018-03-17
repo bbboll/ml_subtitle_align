@@ -17,14 +17,17 @@ class Subtitle(object):
 	Objects of this class can be used to abstract around 
 	subtitle file access.
 	"""
-	def __init__(self, raw_string, talk_id):
+	def __init__(self, raw_string, talk_id, words_with_timing=None):
 		"""
 		Take a raw string for instantiation
 		"""
 		self.raw_string = raw_string
 		self.current_id = 0
 		self.talk_id = talk_id
-		self.words_with_timing = self.parse_raw(raw_string)
+		if words_with_timing == None:
+			self.words_with_timing = self.parse_raw(raw_string)
+		else:
+			self.words_with_timing = words_with_timing
 
 	def parse_raw(self, raw_string):
 		"""

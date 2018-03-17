@@ -94,3 +94,6 @@ class Talk(object):
 
 	def features_path(self):
 		return _path("data/audio_features/{}.npy".format(self.ID))
+
+	def audio_path(self):
+		return _path("data/audio/{}.mp3".format(self.ID))

@@ -59,6 +59,10 @@ class Sound(object):
 		"""
 		Interpolates [start, end] linearly with silence removed
 		"""
+		if end == None:
+			end = len(self.sig) / self.rate
+		if end < 0:
+			end = len(self.sig) / self.rate - end
 		sig_interval = self.sig[math.floor(start*self.rate):math.floor(end*self.rate)]
 		interval_partitions = math.floor((end-start) / PARTITION_LENGHT)
 		remainder = sig_interval.shape[0] % interval_partitions
