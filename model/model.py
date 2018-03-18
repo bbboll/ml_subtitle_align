@@ -35,15 +35,15 @@ class Model(object):
 		"""
 		self.config = arguments
 
-	def train_model(self, input_3d):
+	def train_model(self, input_3d, dense=True):
 		"""
 		"""
-		return self._create_model(input_3d, is_training=True)
+		return self._create_model(input_3d, is_training=True, dense=dense)
 
-	def test_model(self, input_3d):
+	def test_model(self, input_3d, dense=True):
 		"""
 		"""
-		return self._create_model(input_3d, is_training=False)
+		return self._create_model(input_3d, is_training=False, dense=dense)
 
 	def load_variables_from_checkpoint(self, session, checkpoint):
 		"""
@@ -51,12 +51,14 @@ class Model(object):
 		saver = tf.train.Saver(tf.global_variables())
 		saver.restore(session, checkpoint)
 
-	def _create_model(self, input_3d, is_training = True):
+	def _create_model(self, input_3d, is_training=True, dense=True):
 		"""
 		Model structure:
 		Input -> Conv2d -> relu activation (-> dropout) -> pooling
 		      -> Conv2d -> relu activation (-> dropout)
 		Two convolutional layers are used to perform translation-invariant classification.
+		If the model is set to be dense, the embedding of covolution output into the label
+		space is performed by two dense layers.
 		"""
 		if is_training:
 			# load hyperparameter for dropout layers
@@ -123,14 +125,18 @@ class Model(object):
 		flattened_second_conv = tf.reshape(second_dropout, [-1, second_conv_element_count])
 
 		# encode convolution output into label space
-		final_fc_weights = tf.Variable(
-			tf.truncated_normal([
-				second_conv_element_count,
-				OUTPUT_DIM
-			], stddev=0.01)
-		)
-		final_fc_bias = tf.Variable(tf.zeros([OUTPUT_DIM]))
-		final_fc = tf.matmul(flattened_second_conv, final_fc_weights) + final_fc_bias
+		if dense:
+			dense_layer = tf.layers.dense(flattened_second_conv, 1000, activation=tf.nn.sigmoid)
+			final_fc = tf.layers.dense(dense_layer, OUTPUT_DIM)
+		else:
+			final_fc_weights = tf.Variable(
+				tf.truncated_normal([
+					second_conv_element_count,
+					OUTPUT_DIM
+				], stddev=0.01)
+			)
+			final_fc_bias = tf.Variable(tf.zeros([OUTPUT_DIM]))
+			final_fc = tf.matmul(flattened_second_conv, final_fc_weights) + final_fc_bias
 
 		if is_training:
 			return final_fc, keep_prob

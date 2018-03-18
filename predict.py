@@ -29,9 +29,9 @@ def cost_function(x, probs, interval_count, word_indices):
 	out = 0.0
 	for word_ind, t in enumerate(x):
 		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
-		# interval_diffs = interval_midpoints-t
-		# interval_scalars = np.exp(-0.01*interval_diffs**2)
-		interval_scalars = scipy.stats.norm(t, extractor.INTERVAL_SIZE).pdf(interval_midpoints)
+		interval_diffs = interval_midpoints-t
+		interval_scalars = np.exp(-interval_diffs**2 / (2*extractor.DATA_SD**2)) / (np.sqrt(2*np.pi*extractor.DATA_SD**2))
+		# interval_scalars = scipy.stats.norm(t, extractor.DATA_SD).pdf(interval_midpoints)
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
 	return -out
 
@@ -52,10 +52,11 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0316/model.ckpt-15")
+	model_load_checkpoint = _path("pretrained_models/0318/model.ckpt-2")
+	dense_model = False
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
-	prediction = model.test_model(input_3d)
+	prediction = model.test_model(input_3d, dense=dense_model)
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
 	# load input
@@ -82,6 +83,9 @@ if __name__ == '__main__':
 		)
 		prediction_vals = np.concatenate((prediction_vals, np.array(val_prediction).reshape((batch_size, 1500))), axis=0)
 
+	# release gpu resources
+	sess.close()
+
 	print("Prediction for {} intervals was successful.\n Starting optimization...".format(prediction_vals.shape[0]))
 
 	# compute initial guess
@@ -96,13 +100,19 @@ if __name__ == '__main__':
 	word_indices = [frequent_words.index(extractor.ps.stem(w)) for (_,w) in frequent_words_with_timing]
 	optimization_words = [w for (_,w) in frequent_words_with_timing]
 
-	# TODO: optimization
+	# estimate computation time
+	eval_limit = 1000
+	est_time_secs = (1000/eval_limit)*prediction_vals.shape[0]/11
+	print(" (This could take about {:.2f}min)".format(est_time_secs/60))
+	
+	# optimization
 	word_offsets = fmin_cobyla(
 						cost_function, 
 						initial_guess, 
 						constraint_function, 
 						args=[prediction_vals, interval_count, word_indices], 
-						consargs=[]
+						consargs=[],
+						maxfun=eval_limit
 					)
 
 	# demonstrate computed alignment

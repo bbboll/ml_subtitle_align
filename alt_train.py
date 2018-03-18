@@ -50,31 +50,14 @@ def compute_full_vector_labels(talk, interval_count):
 		talk_labels[word_ind][index_range] += np.array([extractor.compute_word_probability(i, distrib) for i in index_range])
 	return talk_labels.T
 
-def compute_categorical_labels(talk, interval_count):
-	"""
-	For each interval, return an int64 (categorical) label.
-	"""
-	talk_labels = []
-	for i in range(interval_count):
-		midpoint = (i+0.5)*extractor.INTERVAL_SIZE
-		closest_word = None
-		diff = float(talk.duration)
-		for (w, t) in word_timings[str(talk.ID)]:
-			if diff > abs(midpoint-t):
-				diff = abs(midpoint-t)
-				closest_word = w
-		word_ind = frequent_words.index(extractor.ps.stem(w))
-		talk_labels.append(word_ind)
-	return np.array(talk_labels, dtype=np.int64)
-
-def xbatches(batch_size, training=True, categorical=False):
+def xbatches(batch_size, training=True):
 	"""Batch MFCC data, labels together.
 	"""
 	talk_limit = None
 	all_ids = [talk.ID for talk in AllTalks(limit=talk_limit)]
 	train_ids, test_ids = train_test_split(all_ids, test_size=0.1, shuffle=True)
 	features = np.zeros((0,mfcc_per_interval,13))
-	labels = np.array([]) if categorical else np.zeros((0,1500))
+	labels = np.zeros((0,1500))
 	talks = AllTalks(limit=talk_limit)
 
 	try:
@@ -93,10 +76,7 @@ def xbatches(batch_size, training=True, categorical=False):
 				mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
 				features = np.concatenate((features, mfcc_features), axis=0)
 
-				if categorical:
-					talk_labels = compute_categorical_labels(talk, interval_count)
-				else:
-					talk_labels = compute_full_vector_labels(talk, interval_count)
+				talk_labels = compute_full_vector_labels(talk, interval_count)
 				labels = np.concatenate((labels, talk_labels), axis=0)
 			else:
 				yield (
@@ -117,10 +97,9 @@ def main():
 	# open Tensorboard in browser:
 	#   http://127.0.0.1:6006
 
-	batch_size = 300
-	categorical_model = False
+	batch_size = 30
 	keep_probability = 0.3
-	model_load_checkpoint = _get_full_path("model", "train", "model.ckpt-1")
+	model_load_checkpoint = None # _get_full_path("model", "train", "model.ckpt-1")
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
@@ -131,37 +110,19 @@ def main():
 	predictions, keep_prob = model.train_model(input_3d)
 
 	# define loss and optimizer
-	if categorical_model:
-		ground_truth_input = tf.placeholder(tf.int64, [None], name="ground_truth_input")
-	else:
-		ground_truth_input = tf.placeholder(tf.float32, [batch_size, 1500], name="ground_truth_input")
+	ground_truth_input = tf.placeholder(tf.float32, [batch_size, 1500], name="ground_truth_input")
 
 	# create back propagation and training evaluation machinery in the graph
 	with tf.name_scope("loss"):
-		if categorical_model:
-			loss = tf.losses.sparse_softmax_cross_entropy(
-				labels=ground_truth_input,
-				logits=predictions
-			)
-		else:
-			loss = tf.losses.mean_squared_error(
-				labels=ground_truth_input,
-				predictions=predictions
-			)
+		loss = tf.losses.mean_squared_error(
+			labels=ground_truth_input,
+			predictions=predictions
+		)
 	tf.summary.scalar("loss", loss)
 
 	with tf.name_scope("train"), tf.control_dependencies([tf.add_check_numerics_ops()]):
 		learning_rate_input = tf.placeholder(tf.float32, [], name="learning_rate_input")
 		train_step = tf.train.GradientDescentOptimizer(learning_rate_input).minimize(loss)
-
-	if categorical_model:
-		predicted_indices = tf.argmax(predictions, 1)
-		correct_prediction = tf.equal(predicted_indices, ground_truth_input)
-		evaluation_step = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-	else:
-		evaluation_step = tf.reduce_mean(tf.squared_difference(predictions, ground_truth_input))
-
-	tf.summary.scalar("accuracy", evaluation_step)
 
 	global_step = tf.train.get_or_create_global_step()
 	increment_global_step = tf.assign(global_step, global_step + 1)
@@ -190,8 +151,7 @@ def main():
 	passes_list = [4, 2]
 	batch_log_interval = 1000
 	save_interval = 3000
-	#passes_list = [1000, 300] # tbc - number of training steps to do with associated learning rate
-	learning_rates_list = [0.0003, 0.0001] # tbc - learning rates, associated with `passes_list`
+	learning_rates_list = [0.001, 0.0001] # tbc - learning rates, associated with `passes_list`
 	passes_max = np.sum(passes_list)
 	global_batch_step = 0
 	for data_pass in range(start_step, passes_max + 1):
@@ -204,9 +164,9 @@ def main():
 				break
 
 		# run the graph with batches of data
-		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(batch_size, training=True, categorical=categorical_model)):
-			train_summary, train_accuracy, loss_value, _, _ = sess.run(
-				[merged_summaries, evaluation_step, loss, train_step, increment_global_step],
+		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(batch_size, training=True)):
+			train_summary, loss_value, _, _ = sess.run(
+				[merged_summaries, loss, train_step, increment_global_step],
 				feed_dict={
 					input_3d: train_input,
 					ground_truth_input: train_ground_truth,
@@ -216,12 +176,7 @@ def main():
 			)
 			if batch_ii % batch_log_interval == 0:
 				train_writer.add_summary(train_summary, data_pass)
-				if categorical_model:
-					tf.logging.info("Step #%d: rate %f, accuracy %.1f%%, cross entropy %f" %
-						(batch_ii, learning_rate_value, train_accuracy * 100, loss_value)
-					)
-				else:
-					tf.logging.info("Pass {} - batch {}: rate {}, mean squared error {}".format(data_pass, batch_ii, learning_rate_value, loss_value))
+				tf.logging.info("Pass {} - batch {}: rate {}, mean squared error {}".format(data_pass, batch_ii, learning_rate_value, loss_value))
 			if batch_ii % save_interval == 0:
 				global_batch_step += 1
 				# save model checkpoint
@@ -233,9 +188,9 @@ def main():
 		total_accuracy = 0
 		validation_batches = 0
 		total_cf_matrix = None
-		for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False, categorical=categorical_model)):
-			val_summary, val_accuracy = sess.run(
-				[merged_summaries, evaluation_step],
+		for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False)):
+			val_summary, val_loss = sess.run(
+				[merged_summaries, loss],
 				feed_dict={
 					input_3d: val_input,
 					ground_truth_input: val_ground_truth,
@@ -243,12 +198,10 @@ def main():
 				}
 			)
 			validation_batches += 1
-			total_accuracy += val_accuracy
+			total_loss += val_loss
 		validation_writer.add_summary(val_summary, data_pass)
-		if categorical_model:
-			tf.logging.info("Step %d: Validation accuracy = %.1f%%" % (data_pass, (total_accuracy/validation_batches) * 100))
-		else:
-			tf.logging.info("Pass {}: Mean squared error {}".format(data_pass, (total_accuracy/validation_batches) * 100))
+		tf.logging.info("Pass {}: Mean squared error {}".format(data_pass, (total_loss/validation_batches) * 100))
+			
 		# save model checkpoint
 		checkpoint_path = _get_full_path("model", "train", "model.ckpt")
 		tf.logging.info("Saving to `%s-%d`", checkpoint_path, data_pass)
