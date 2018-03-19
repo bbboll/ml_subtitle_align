@@ -1,3 +1,10 @@
+##
+## /preprocessing/audio_features.py
+##
+## Created by Bastian Boll <bastibboll@googlemail.com>
+##        and Paul Warkentin <p.warkentin@stud.uni-heidelberg.de>.
+##
+
 import numpy as np
 import os
 import os.path
@@ -7,16 +14,24 @@ from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
 
-def _path(relpath):
+
+def _path(*rel_path):
+	"""Make absolute path to a file or directory in the project folder `ml_subtitle_align`.
+
+	Arguments:
+        *rel_path: List of path elements.
+
+    Returns:
+        `str`: Absolute path to requested file or directory.
 	"""
-	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
-	"""
-	parent = os.path.join(os.path.dirname(__file__), "..")
-	return os.path.abspath(os.path.join(parent, relpath))
+	path = os.path.abspath(__file__) # `.../ml_subtitle_align/preprocessing/audio_features.py`
+	path = os.path.dirname(path) # `.../ml_subtitle_align/preprocessing/`
+	path = os.path.dirname(path) # `.../ml_subtitle_align/`
+	return os.path.join(path, *rel_path)
 
 
 class AudioFeatures(object):
-	"""Objects of this handle extracting and loading audio features from files.
+	"""Objects of this class handle extracting and loading audio features from files.
 
 	Attributes:
 		features (obj:`numpy.ndarray`): NumPy array holding audio features. Default is None.
@@ -34,7 +49,7 @@ class AudioFeatures(object):
 			path (str): Path to an existing wav file.
 		"""
 		if not os.path.isfile(path):
-			print("Please download audio first.")
+			print("No such file or directory: `{}`.".format(path))
 			exit()
 
 		# load wav audio data
@@ -48,7 +63,7 @@ class AudioFeatures(object):
 			path (str): Path to an existing mp3 file.
 		"""
 		if not os.path.isfile(path):
-			print("Please download audio first.")
+			print("No such file or directory: `{}`.".format(path))
 			exit()
 
 		# convert mp3 to wav
@@ -73,7 +88,7 @@ class AudioFeatures(object):
 			path (str): Path to an existing numpy file.
 		"""
 		if not os.path.isfile(path):
-			print("Please download audio first.")
+			print("No such file or directory: `{}`.".format(path))
 			exit()
 
 		# load audio features
@@ -91,15 +106,3 @@ class AudioFeatures(object):
 
 		# save features
 		np.save(path, self.features)
-
-
-if __name__ == "__main__":
-	"""Testing the audio features extraction.
-	"""
-
-	audio = AudioFeatures()
-	audio.load_from_wav(_path("preprocessing/audio_features_example/english.wav")) # https://raw.githubusercontent.com/jameslyons/python_speech_features/master/english.wav
-	audio.save_to_numpy(_path("preprocessing/audio_features_example/english.npy"))
-
-	print(audio.features.shape)
-	print(audio.features[:3, :])
