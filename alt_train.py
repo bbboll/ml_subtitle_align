@@ -55,7 +55,7 @@ def xbatches(batch_size, training=True):
 	"""
 	talk_limit = None
 	all_ids = [talk.ID for talk in AllTalks(limit=talk_limit)]
-	train_ids, test_ids = train_test_split(all_ids, test_size=0.1, shuffle=True)
+	train_ids, test_ids = train_test_split(all_ids, test_size=0.1, shuffle=False)
 	features = np.zeros((0,mfcc_per_interval,13))
 	labels = np.zeros((0,1500))
 	talks = AllTalks(limit=talk_limit)

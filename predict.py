@@ -12,6 +12,8 @@ from nltk import word_tokenize
 from timing_demo import TimingDemo
 import scipy.stats
 from scipy.optimize import fmin_cobyla
+from scipy.optimize import fmin_slsqp
+import argparse
 
 def _path(relpath):
 	"""
@@ -35,18 +37,41 @@ def cost_function(x, probs, interval_count, word_indices):
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
 	return -out
 
-def constraint_function(x):
+def cost_function_gradient(x, probs, interval_count, word_indices):
+	print("starting gradient eval")
+	out = np.zeros((len(x),))
+	for word_ind, t in enumerate(x):
+		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
+		interval_diffs = interval_midpoints-t
+		interval_scalars = np.exp(-interval_diffs**2 / (2*extractor.DATA_SD**2)) / (np.sqrt(2*np.pi*extractor.DATA_SD**2))
+		interval_scalars = np.multiply(interval_scalars, probs[:,word_indices[word_ind]])
+		for j, tj in enumerate(x):
+			gradient_inner = (interval_midpoints-tj)*tj / (2*extractor.DATA_SD**2)
+			out[j] += interval_scalars.dot(gradient_inner)
+	print("done")
+	return -out
+
+def constraint_function(x, probs=[], interval_count=0, word_indices=[]):
 	"""
 	Enforces correct word order
 	"""
 	return np.array(x[1:])-np.array(x[:-1])
 
-if __name__ == '__main__':
+def constrain_function_jacobian(x, probs=[], interval_count=0, word_indices=[]):
+	print("starting cost function jac eval")
+	out = np.zeros((len(x)-1, len(x)))
+	for i in range(len(x)-1):
+		out[i,i] = -1
+		out[i,i+1] = 1
+	print("done")
+	return out
 
-	if len(sys.argv) == 1:
-		print("Please enter talk ID.")
-		exit()
-	talk_id = int(sys.argv[1])
+if __name__ == '__main__':
+	arguments = argparse.ArgumentParser()
+	arguments.add_argument("-baseline", action="store_true")
+	arguments.add_argument("id", help="TED talk id.")
+	options = arguments.parse_args()
+	talk_id = int(options.id)
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
@@ -61,6 +86,7 @@ if __name__ == '__main__':
 
 	# load input
 	talk = Talk(talk_id)
+
 	mfcc_per_interval = int(extractor.INTERVAL_SIZE / 0.005)
 	mfcc_features = np.load(talk.features_path())
 	interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
@@ -69,24 +95,28 @@ if __name__ == '__main__':
 
 	# perform prediction
 	prediction_vals = np.zeros((0,1500))
-	batch_size = 50
-	while mfcc_features.shape[0] > 0:
-		if batch_size > mfcc_features.shape[0]:
-			batch_size = mfcc_features.shape[0]
-		chunk = mfcc_features[:batch_size]
-		mfcc_features = mfcc_features[batch_size:]
-		val_prediction = sess.run(
-			[prediction],
-			feed_dict={
-				input_3d: chunk
-			}
-		)
-		prediction_vals = np.concatenate((prediction_vals, np.array(val_prediction).reshape((batch_size, 1500))), axis=0)
+	if not options.baseline:
+		batch_size = 50
+		while mfcc_features.shape[0] > 0:
+			if batch_size > mfcc_features.shape[0]:
+				batch_size = mfcc_features.shape[0]
+			chunk = mfcc_features[:batch_size]
+			mfcc_features = mfcc_features[batch_size:]
+			val_prediction = sess.run(
+				[prediction],
+				feed_dict={
+					input_3d: chunk
+				}
+			)
+			prediction_vals = np.concatenate((prediction_vals, np.array(val_prediction).reshape((batch_size, 1500))), axis=0)
 
 	# release gpu resources
 	sess.close()
 
-	print("Prediction for {} intervals was successful.\n Starting optimization...".format(prediction_vals.shape[0]))
+	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
+
+	presave_path = _path("optimization_demos/optimized_predictions_{}.npy".format(talk_id))
+	baseline_path = _path("optimization_demos/optimized_predictions_baseline_{}.npy".format(talk_id))
 
 	# compute initial guess
 	sound = Sound(talk.audio_path())
@@ -94,25 +124,46 @@ if __name__ == '__main__':
 	filter_words = [".", ",", ";", "-", "!", "?", "--", "(Laughter)", "Laughter"]
 	clean_words = [w for w in words if not w in filter_words]
 	start_off = 12.0
-	word_offsets = np.array(sound.interpolate_without_silence(start_off, -10.0, len(clean_words)))
+	if options.baseline:
+		if not os.path.isfile(baseline_path):
+			print("No baseline data found. Please run full procedure first.")
+			exit()
+		word_offsets = np.load(baseline_path)
+	else:
+		word_offsets = np.array(sound.interpolate_without_silence(start_off, -10.0, len(clean_words)))
 	frequent_words_with_timing = [(start_off+t,w) for t,w in zip(word_offsets, clean_words) if extractor.ps.stem(w) in frequent_words]
 	initial_guess = [t for (t,_) in frequent_words_with_timing]
 	word_indices = [frequent_words.index(extractor.ps.stem(w)) for (_,w) in frequent_words_with_timing]
 	optimization_words = [w for (_,w) in frequent_words_with_timing]
 
-	# estimate computation time
-	print(" (This could take minutes.)")
-	
-	# optimization
-	word_offsets = fmin_cobyla(
-						cost_function, 
-						initial_guess, 
-						constraint_function, 
-						args=[prediction_vals, interval_count, word_indices], 
-						consargs=[],
-						maxfun=1000,
-						disp=3
-					)
+	if not os.path.isfile(baseline_path):
+		np.save(baseline_path, initial_guess)
+	if os.path.isfile(presave_path):
+		word_offsets = np.load(presave_path)
+	else:
+		print("Starting optimization....\n (This could take minutes.)")
+		# optimization
+		word_offsets = fmin_cobyla(
+							cost_function, 
+							initial_guess, 
+							constraint_function, 
+							args=[prediction_vals, interval_count, word_indices], 
+							consargs=[],
+							maxfun=1000
+						)
+		# bounds = [(10, talk.duration) for _ in range(len(initial_guess))]
+		# word_offsets = fmin_slsqp(
+		# 				cost_function,
+		# 				initial_guess,
+		# 				f_ieqcons = constraint_function,
+		# 				fprime = cost_function_gradient,
+		# 				fprime_ieqcons = constrain_function_jacobian,
+		# 				args = (prediction_vals, interval_count, word_indices),
+		# 				bounds=bounds,
+		# 				iter = 10
+		# 			)
+
+		np.save(presave_path, word_offsets)
 
 	# demonstrate computed alignment
 	frequent_words_with_timing = [(t,w) for t,w in zip(word_offsets, optimization_words)]
