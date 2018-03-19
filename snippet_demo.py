@@ -23,10 +23,10 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0318/model.ckpt-2")
+	model_load_checkpoint = _path("pretrained_models/0319_dense/model.ckpt-50")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
-	prediction = model.test_model(input_3d)
+	prediction = model.test_model(input_3d, dense=True)
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
 	# load input

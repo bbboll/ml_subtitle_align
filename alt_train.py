@@ -98,7 +98,7 @@ def main():
 	#   http://127.0.0.1:6006
 
 	batch_size = 30
-	keep_probability = 0.3
+	keep_probability = 0.8
 	model_load_checkpoint = None # _get_full_path("model", "train", "model.ckpt-1")
 
 	# start a new tensorflow session
@@ -185,7 +185,7 @@ def main():
 				saver.save(sess, checkpoint_path, global_step=global_batch_step)
 
 		# evaluate
-		total_accuracy = 0
+		total_loss = 0
 		validation_batches = 0
 		total_cf_matrix = None
 		for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False)):

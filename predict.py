@@ -52,8 +52,8 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0318/model.ckpt-2")
-	dense_model = False
+	model_load_checkpoint = _path("pretrained_models/0319_dense/model.ckpt-50")
+	dense_model = True
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d, dense=dense_model)
@@ -101,9 +101,7 @@ if __name__ == '__main__':
 	optimization_words = [w for (_,w) in frequent_words_with_timing]
 
 	# estimate computation time
-	eval_limit = 1000
-	est_time_secs = (1000/eval_limit)*prediction_vals.shape[0]/11
-	print(" (This could take about {:.2f}min)".format(est_time_secs/60))
+	print(" (This could take minutes.)")
 	
 	# optimization
 	word_offsets = fmin_cobyla(
@@ -112,7 +110,8 @@ if __name__ == '__main__':
 						constraint_function, 
 						args=[prediction_vals, interval_count, word_indices], 
 						consargs=[],
-						maxfun=eval_limit
+						maxfun=1000,
+						disp=3
 					)
 
 	# demonstrate computed alignment
