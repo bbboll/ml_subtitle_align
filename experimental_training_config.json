@@ -1,9 +1,0 @@
-{
-	"keep_probability": 0.8,
-	"loss_function": "logsumexp",
-	"batch_log_interval": 1000,
-	"save_step_interval": 3000,
-	"batch_size": 50,
-	"passes_list": [2,2],
-	"learning_rates_list": [0.001,0.0001]
-}
