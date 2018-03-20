@@ -75,7 +75,7 @@ class Model(BaseModel):
 			second_dropout = tf.nn.dropout(second_relu, keep_prob)
 		else:
 			second_dropout = second_relu
-		second_max_pool = tf.nn.max_pool(first_dropout, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
+		second_max_pool = tf.nn.max_pool(second_dropout, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
 
 		# convolution 2 parameters
 		third_filter_width  = 4
