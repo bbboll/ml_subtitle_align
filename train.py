@@ -9,6 +9,7 @@ import extract_training_data as extractor
 from training_routines import compute_full_vector_labels
 from training_routines import xbatches
 from training_routines import _get_full_path
+from training_routines import get_training_save_paths
 
 if __name__ == "__main__":
 	tf.logging.set_verbosity(tf.logging.INFO)
@@ -27,6 +28,9 @@ if __name__ == "__main__":
 	if not os.path.isfile(config_path):
 		copyfile(config_path+".default", config_path)
 	config = json.load(open(config_path))
+	hardware_config_path = _get_full_path("hardware_config.json")
+	if not os.path.isfile(hardware_config_path):
+		copyfile(hardware_config_path+".default", hardware_config_path)
 
 	batch_size = config["batch_size"]
 	keep_probability = config["keep_probability"]
@@ -76,10 +80,15 @@ if __name__ == "__main__":
 	#
 	saver = tf.train.Saver(tf.global_variables())
 
-	# Merge all the summaries and write them out to /model/retrain_logs
+	# Merge all the summaries and write them out to /training_data/run_[...]_[...]/retrain_logs
 	merged_summaries = tf.summary.merge_all()
-	train_writer = tf.summary.FileWriter(_get_full_path("models", "retrain_logs", "train"), sess.graph)
-	validation_writer = tf.summary.FileWriter(_get_full_path("models", "retrain_logs", "validation"))
+	training_data_path, retrain_logs_path, train_path = get_training_save_paths(config)
+	train_writer = tf.summary.FileWriter(os.path.join(retrain_logs_path, "train"), sess.graph)
+	validation_writer = tf.summary.FileWriter(os.path.join(retrain_logs_path, "validation"))
+
+	# copy training and hardware config to training data output path
+	copyfile(config_path, os.path.join(training_data_path, "training_config.json"))
+	copyfile(hardware_config_path, os.path.join(training_data_path, "hardware_config.json"))
 
 	#
 	# 	--- initialize training variables ---
@@ -92,9 +101,11 @@ if __name__ == "__main__":
 
 	tf.logging.info("Training from step: %d", start_step)
 
+	print("You can monitor the training progress using a Tensorboard:\n $ python3 -m tensorboard.main --logdir={}".format(retrain_logs_path))
+
 	# save graph.pbtxt
-	tf.train.write_graph(sess.graph_def, _get_full_path("models", "train"), "graph.pbtxt")
-	checkpoint_path = _get_full_path("models", "train", "model.ckpt")
+	tf.train.write_graph(sess.graph_def, train_path, "graph.pbtxt")
+	checkpoint_path = os.path.join(train_path, "model.ckpt")
 
 	# training loop
 	save_step_interval = config["save_step_interval"] # interval how often the model should be saved

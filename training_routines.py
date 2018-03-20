@@ -1,5 +1,7 @@
 import numpy as np
-import os.path
+import os
+import datetime
+import hashlib
 import json
 import extract_training_data as extractor
 from sklearn.model_selection import train_test_split
@@ -18,6 +20,15 @@ def _get_full_path(*rel_path):
 	path = os.path.abspath(__file__) # `.../ml_subtitle_align/train.py`
 	path = os.path.dirname(path) # `.../ml_subtitle_align/`
 	return os.path.join(path, *rel_path)
+
+def get_training_save_paths(model_config):
+	config_hash = hashlib.md5("-".join(["{}:{}".format(k,v) for k,v in model_config.items()]).encode('utf-8')).hexdigest()
+	dirpath = _get_full_path("training_data", "run_{}_{}".format(datetime.datetime.now().strftime("%Y-%m-%d-%H"), config_hash))
+	if not os.path.isdir(dirpath):
+		os.mkdir(dirpath)
+	return dirpath, os.path.join(dirpath, "retrain_logs"), os.path.join(dirpath, "train")
+
+
 
 if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extractor.word_timings_path):
 	print("Execute extract_training_data first.")

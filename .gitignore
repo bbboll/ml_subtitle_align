@@ -15,6 +15,7 @@ models/experimental_train/*
 models/train/*
 pretrained_models/*
 training_config.json
+hardware_config.json
 
 # Python cache
 __pycache__/
