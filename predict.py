@@ -4,7 +4,7 @@ import json
 import tensorflow as tf
 import numpy as np
 import extract_training_data as extractor
-from model.model import Model
+from models.deep_conv_model import Model
 from preprocessing.talk import Talk
 from preprocessing.audio_tools import Sound
 from preprocessing.subtitle import Subtitle
@@ -26,6 +26,23 @@ if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extra
 	print("Execute extract_training_data first.")
 	exit()
 frequent_words = json.load(open(extractor.frequent_words_path))
+prior_probabilities_path = _path("data/training/word_priors.json")
+if not os.path.isfile(prior_probabilities_path):
+	print("Execute prior_probabilities.py first.")
+	exit()
+prior_probabilities_dict = json.load(open(prior_probabilities_path))
+prior_probabilities = np.array([p for _, p in prior_probabilities_dict.items()])
+
+def argmax_n(arr, n=1):
+	"""
+	Computes the n maximum entries and returns the respective indices
+	"""
+	max_ind = []
+	while len(max_ind) < n:
+		ind = np.argmax(arr)
+		arr[ind] = -np.inf
+		max_ind.append(ind)
+	return max_ind
 
 def cost_function(x, probs, interval_count, word_indices):
 	out = 0.0
@@ -77,11 +94,10 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0320_dense/model.ckpt-4")
-	dense_model = True
+	model_load_checkpoint = _path("pretrained_models/0320_deep/model.ckpt-18")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
-	prediction = model.test_model(input_3d, dense=dense_model)
+	prediction = model.test_model(input_3d)
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
 	# load input
@@ -114,6 +130,15 @@ if __name__ == '__main__':
 	sess.close()
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
+
+	# compute deviations from the prior probabilities
+	# scale deviations nonlinearly to pronounce their differences
+	if not options.baseline:
+		for i in range(interval_count):
+			prediction_vals[i,:] -= prior_probabilities
+			prediction_vals[i,:] = np.maximum(prediction_vals[i,:], np.zeros((1500,)))
+			max_ind = argmax_n(prediction_vals[i,:], n=5)
+			prediction_vals[i,max_ind] *= 80
 
 	presave_path = _path("optimization_demos/optimized_predictions_{}.npy".format(talk_id))
 	baseline_path = _path("optimization_demos/optimized_predictions_baseline_{}.npy".format(talk_id))
@@ -149,7 +174,7 @@ if __name__ == '__main__':
 							constraint_function, 
 							args=[prediction_vals, interval_count, word_indices], 
 							consargs=[],
-							maxfun=500
+							maxfun=800
 						)
 		# bounds = [(10, talk.duration) for _ in range(len(initial_guess))]
 		# word_offsets = fmin_slsqp(

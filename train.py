@@ -74,7 +74,7 @@ if __name__ == "__main__":
 	#
 	# 	--- define optimizer ---
 	#
-	with tf.name_scope("train"), tf.control_dependencies([tf.add_check_numerics_ops()]):
+	with tf.name_scope("train"):
 		learning_rate_input = tf.placeholder(tf.float32, [], name="learning_rate_input")
 		train_step = tf.train.GradientDescentOptimizer(learning_rate_input).minimize(loss)
 

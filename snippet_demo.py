@@ -1,4 +1,4 @@
-from model.model import Model
+from models.deep_conv_model import Model
 import os.path
 import json
 import tensorflow as tf
@@ -17,16 +17,23 @@ if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extra
 	exit()
 frequent_words = json.load(open(extractor.frequent_words_path))
 
+prior_probabilities_path = _path("data/training/word_priors.json")
+if not os.path.isfile(prior_probabilities_path):
+	print("Execute prior_probabilities.py first.")
+	exit()
+prior_probabilities_dict = json.load(open(prior_probabilities_path))
+prior_probabilities = np.array([p for _, p in prior_probabilities_dict.items()])
+
 if __name__ == '__main__':
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0319_dense/model.ckpt-50")
+	model_load_checkpoint = _path("training_data/run_2018-03-20-14_6caac7df2185512e9a0676e75a3244d9/train/model.ckpt-4")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
-	prediction = model.test_model(input_3d, dense=True)
+	prediction = model.test_model(input_3d)
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
 	# load input
@@ -40,9 +47,15 @@ if __name__ == '__main__':
 		}
 	)
 	val_prediction = np.array(val_prediction).reshape((1500,))
-	n = 10
+	n = 5
 	idx = (-val_prediction).argsort()[:n].astype(int)
 	print(" --- The computed {} most likely words in the snippet are --- ".format(n))
+	for i in idx:
+		print("{} - {}".format(val_prediction[i], frequent_words[i]))
+
+	val_prediction -= prior_probabilities
+	idx = (-val_prediction).argsort()[:n].astype(int)
+	print(" --- The computed {} most interesting words in the snippet are --- ".format(n))
 	for i in idx:
 		print("{} - {}".format(val_prediction[i], frequent_words[i]))
 
