@@ -8,11 +8,11 @@
 *.npy
 
 # training logs
-model/retrain_logs/*
-model/retrain_logs_*/*
-model/experimental_retrain_logs/*
-model/experimental_train/*
-model/train/*
+models/retrain_logs/*
+models/retrain_logs_*/*
+models/experimental_retrain_logs/*
+models/experimental_train/*
+models/train/*
 pretrained_models/*
 training_config.json
 
