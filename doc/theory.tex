@@ -15,12 +15,13 @@ MFCC can be used to identify all the parts of the audio that belong to linguisti
 
 \textbf{by Paul Warkentin} \\
 
-For speech recognition, convolutional networks are a widely used form of deep learning models. That is why we built our graph using two convolutional layers, followed by ReLU layers. The output of the first ReLU layer is also pooled. At the end, the output of the second ReLU layer is transformed by two dense layers into the result of the model.
+The main part of this project is the classification of extracted audio signals of linguistic content. This is a typical problem in the field of speech recognition, for which convolutional neural networks are a widely used class of deep, feed-forward artificial neural networks. \\
+An important feature of convolutional neural networks is that they are translation invariant. The input data for our model are intervals containing MFCC datapoints. Because we do not know where in the interval the features which determine the word being said are localized, the shift invariance feature of convolutional neural networks is ideal for the speech recognition part in our problem.
 
-% TODO: more about convolutional networks
+% For speech recognition, convolutional networks are a widely used form of deep learning models. That is why we built our graph using two convolutional layers, followed by ReLU layers. The output of the first ReLU layer is also pooled. At the end, the output of the second ReLU layer is transformed by two dense layers into the result of the model.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{\RootPath/graphics/graph}
-    \caption{Classifier}
-\end{figure}
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=\textwidth]{\RootPath/graphics/graph}
+%     \caption{Classifier}
+% \end{figure}
