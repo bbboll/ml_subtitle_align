@@ -1,5 +1,6 @@
 import models.conv_model
 import models.experimental_model
+import models.deep_conv_model
 import numpy as np
 import json
 import os.path
@@ -48,6 +49,8 @@ if __name__ == "__main__":
 		model = models.conv_model.Model(hyperparams=["dense"])
 	elif config["model"] == "conv_lstm":
 		model = models.conv_lstm_model.Model()
+	elif config["model"] == "deep_conv":
+		model = models.deep_conv_model.Model()
 	else: # if config["model"] == "experimental"
 		model = models.model.Model()
 	predictions, keep_prob = model.train_model(input_3d)
@@ -103,7 +106,7 @@ if __name__ == "__main__":
 
 	tf.logging.info("Training from step: %d", start_step)
 
-	print("You can monitor the training progress using a Tensorboard:\n $ python3 -m tensorboard.main --logdir={}".format(retrain_logs_path))
+	print("\n\nYou can monitor the training progress using a Tensorboard:\n $ python3 -m tensorboard.main --logdir={}\n\n".format(retrain_logs_path))
 
 	# save graph.pbtxt
 	tf.train.write_graph(sess.graph_def, train_path, "graph.pbtxt")
