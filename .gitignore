@@ -9,6 +9,9 @@
 
 # training logs
 model/retrain_logs/*
+model/retrain_logs_*/*
+model/experimental_retrain_logs/*
+model/experimental_train/*
 model/train/*
 pretrained_models/*
 

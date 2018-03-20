@@ -37,16 +37,23 @@ if __name__ == "__main__":
 	predictions, keep_prob = model.train_model(input_3d)
 
 	#
-	# 	--- define loss and optimizer ---
+	# 	--- define loss ---
 	#
 	ground_truth_input = tf.placeholder(tf.float32, [batch_size, 1500], name="ground_truth_input")
 	with tf.name_scope("loss"):
-		loss = tf.losses.mean_squared_error(
-			labels=ground_truth_input,
-			predictions=predictions
-		)
+		if config["loss_function"] == "logsumexp":
+			# this is a smooth approximation to the maximum function
+			loss = tf.reduce_logsumexp(tf.abs(tf.subtract(ground_truth_input, predictions)))
+		else: # if config["loss_function"] == "mean_squared_error":
+			loss = tf.losses.mean_squared_error(
+				labels=ground_truth_input,
+				predictions=predictions
+			)
 	tf.summary.scalar("loss", loss)
 
+	#
+	# 	--- define optimizer ---
+	#
 	with tf.name_scope("train"), tf.control_dependencies([tf.add_check_numerics_ops()]):
 		learning_rate_input = tf.placeholder(tf.float32, [], name="learning_rate_input")
 		train_step = tf.train.GradientDescentOptimizer(learning_rate_input).minimize(loss)
@@ -86,6 +93,7 @@ if __name__ == "__main__":
 	batch_log_interval = config["batch_log_interval"]
 	passes_max = np.sum(passes_list)
 	global_batch_step = 0
+	validation_loss = 0
 	for data_pass in range(start_step, passes_max + 1):
 		# get current learning rate
 		passes_sum = 0
@@ -135,8 +143,16 @@ if __name__ == "__main__":
 			validation_batches += 1
 			total_loss += val_loss
 		validation_writer.add_summary(val_summary, data_pass)
-		tf.logging.info("Pass {}: Mean squared error {}".format(data_pass, (total_loss/validation_batches) * 100))
+		validation_loss = total_loss/validation_batches
+		tf.logging.info("Pass {}: Mean squared error {}".format(data_pass, validation_loss))
 			
 		# save model checkpoint
 		tf.logging.info("Saving to `%s-%d`", checkpoint_path, data_pass)
 		saver.save(sess, checkpoint_path, global_step=data_pass)
+	sess.close()
+
+	# print training run summary
+	print(" -----------------------------------------\n \
+Training has finished with a final validation loss of\n {}\nParameters were:".format(validation_loss))
+	for key, val in config.items():
+		print("{}: {}".format(key, val))
