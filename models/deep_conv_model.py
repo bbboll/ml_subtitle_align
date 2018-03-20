@@ -10,6 +10,11 @@ class Model(BaseModel):
 		Model structure:
 		Input -> Conv2d -> relu activation -> pooling
 		      -> Conv2d -> relu activation (-> dropout) -> pooling
+		      -> Conv2d -> relu activation -> pooling
+		      -> Conv2d -> relu activation -> pooling
+		      -> Conv2d -> relu activation -> pooling
+		      -> Conv2d -> relu activation -> pooling
+		      -> Dense  -> Dense -> Output
 		Six convolutional layers are used to perform translation-invariant classification.
 		The embedding of covolution output into the label space is performed by two dense layers.
 		"""
