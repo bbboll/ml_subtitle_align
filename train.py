@@ -46,6 +46,8 @@ if __name__ == "__main__":
 		model = models.conv_model.Model()
 	elif config["model"] == "dense_conv":
 		model = models.conv_model.Model(hyperparams=["dense"])
+	elif config["model"] == "conv_lstm":
+		model = models.conv_lstm_model.Model()
 	else: # if config["model"] == "experimental"
 		model = models.model.Model()
 	predictions, keep_prob = model.train_model(input_3d)
