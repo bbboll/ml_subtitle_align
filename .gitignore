@@ -13,6 +13,7 @@ models/retrain_logs_*/*
 models/experimental_retrain_logs/*
 models/experimental_train/*
 models/train/*
+training_data/run_*
 pretrained_models/*
 training_config.json
 hardware_config.json
