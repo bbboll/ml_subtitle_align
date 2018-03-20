@@ -1,4 +1,5 @@
 import models.conv_model
+import models.conv_lstm_model
 import models.experimental_model
 import models.deep_conv_model
 import numpy as np
