@@ -77,7 +77,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0319_dense/model.ckpt-50")
+	model_load_checkpoint = _path("pretrained_models/0320_dense/model.ckpt-4")
 	dense_model = True
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 							constraint_function, 
 							args=[prediction_vals, interval_count, word_indices], 
 							consargs=[],
-							maxfun=1000
+							maxfun=500
 						)
 		# bounds = [(10, talk.duration) for _ in range(len(initial_guess))]
 		# word_offsets = fmin_slsqp(

@@ -15,13 +15,13 @@ def _path(relpath):
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
 INTERVAL_SIZE = 0.4
-DATA_SD = 0.4
+DATA_SD = 0.15
 
 frequent_words_path = _path("data/training/frequent_words.json")
 all_words_path = _path("data/talks/counts.json")
 word_timings_path = _path("data/training/word_timings.json")
 
-nltk.download('punkt')
+# nltk.download('punkt')
 ps = nltk.stem.PorterStemmer()
 
 def compute_most_frequent_words():

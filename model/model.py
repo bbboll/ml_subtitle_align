@@ -116,18 +116,43 @@ class Model(object):
 			second_dropout = tf.nn.dropout(second_relu, keep_prob)
 		else:
 			second_dropout = second_relu
+		second_max_pool = tf.nn.max_pool(first_dropout, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
+
+		# convolution 2 parameters
+		third_filter_width  = 4
+		third_filter_height = 10
+		third_filter_count  = 64
+		third_weights = tf.Variable(
+			tf.truncated_normal([
+				third_filter_height,
+				third_filter_width,
+				first_filter_count,
+				third_filter_count
+			], stddev=0.01)
+		)
+
+		# convolution 3
+		third_bias = tf.Variable(tf.zeros([third_filter_count]))
+		third_conv = tf.nn.conv2d(second_max_pool, third_weights, [1, 1, 1, 1], "SAME") + third_bias
+
+		# activation (+ dropout) for convolution 2
+		third_relu = tf.nn.relu(third_conv)
+		if is_training:
+			third_dropout = tf.nn.dropout(third_relu, keep_prob)
+		else:
+			third_dropout = third_relu
 
 		# flatten convolutional output
-		second_conv_shape = second_dropout.get_shape()
-		second_conv_output_width = second_conv_shape[2]
-		second_conv_output_height = second_conv_shape[1]
-		second_conv_element_count = int(second_conv_output_width * second_conv_output_height * second_filter_count)
-		flattened_second_conv = tf.reshape(second_dropout, [-1, second_conv_element_count])
+		third_conv_shape = third_dropout.get_shape()
+		third_conv_output_width = third_conv_shape[2]
+		third_conv_output_height = third_conv_shape[1]
+		third_conv_element_count = int(third_conv_output_width * third_conv_output_height * third_filter_count)
+		flattened_third_conv = tf.reshape(third_dropout, [-1, third_conv_element_count])
 
 		# encode convolution output into label space
 		if dense:
-			dense_layer = tf.layers.dense(flattened_second_conv, 1000, activation=tf.nn.sigmoid)
-			final_fc = tf.layers.dense(dense_layer, OUTPUT_DIM)
+			dense_layer = tf.layers.dense(flattened_third_conv, 1000, activation=tf.nn.sigmoid)
+			final_fc = tf.layers.dense(dense_layer, OUTPUT_DIM, activation=tf.nn.sigmoid)
 		else:
 			final_fc_weights = tf.Variable(
 				tf.truncated_normal([
@@ -136,7 +161,7 @@ class Model(object):
 				], stddev=0.01)
 			)
 			final_fc_bias = tf.Variable(tf.zeros([OUTPUT_DIM]))
-			final_fc = tf.matmul(flattened_second_conv, final_fc_weights) + final_fc_bias
+			final_fc = tf.matmul(flattened_third_conv, final_fc_weights) + final_fc_bias
 
 		if is_training:
 			return final_fc, keep_prob
