@@ -4,7 +4,7 @@ import json
 import tensorflow as tf
 import numpy as np
 import extract_training_data as extractor
-from models.deep_conv_model import Model
+from models.conv_lstm_model import Model
 from preprocessing.talk import Talk
 from preprocessing.audio_tools import Sound
 from preprocessing.subtitle import Subtitle
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-10_e58c517cc1e02b83c8db91e5019babf8/train/model.ckpt-4")
+	model_load_checkpoint = _path("training_data/run_2018-03-21-12_9c8bbf453a6ac17da1914dd3f27429a8/train/model.ckpt-5")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d)

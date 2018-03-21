@@ -6,5 +6,6 @@
 	"save_step_interval": 3000,
 	"batch_size": 50,
 	"passes_list": [2,2],
-	"learning_rates_list": [0.01,0.001]
+	"learning_rates_list": [0.01,0.001],
+	"optimizer": "gd"
 }

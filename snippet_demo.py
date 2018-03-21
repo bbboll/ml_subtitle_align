@@ -1,4 +1,4 @@
-from models.deep_conv_model import Model
+from models.conv_lstm_model import Model
 import os.path
 import json
 import tensorflow as tf
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-10_e58c517cc1e02b83c8db91e5019babf8/train/model.ckpt-4")
+	model_load_checkpoint = _path("training_data/run_2018-03-21-12_9c8bbf453a6ac17da1914dd3f27429a8/train/model.ckpt-5")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 		}
 	)
 	val_prediction = np.array(val_prediction).reshape((1500,))
-	n = 5
+	n = 500
 	idx = (-val_prediction).argsort()[:n].astype(int)
 	print(" --- The computed {} most likely words in the snippet are --- ".format(n))
 	for i in idx:

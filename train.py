@@ -15,7 +15,7 @@ from training_routines import get_training_save_paths
 
 if __name__ == "__main__":
 	tf.logging.set_verbosity(tf.logging.INFO)
-	model_load_checkpoint = _get_full_path("training_data", "run_2018-03-21-12_ca06cd513eee240cf3dd3652a69c4553", "train", "model.ckpt-2")
+	model_load_checkpoint = None #_get_full_path("training_data", "run_2018-03-21-14_a3d133d1fb017e1980ae91f7c2345a2f", "train", "model.ckpt-11")
 
     # change directory to ml_subtitle_align/ folder
 	# start Tensorboard with command:
@@ -75,9 +75,17 @@ if __name__ == "__main__":
 						tf.reduce_mean(tf.multiply(tf.abs(predictions), 4e2))
 					)
 		elif config["loss_function"] == "power_max":
-			loss = tf.pow(tf.reduce_mean(tf.reduce_max(tf.pow(tf.subtract(ground_truth_input, predictions), 4), axis=1)), 0.25)
+			loss = tf.reduce_mean(tf.reduce_max(tf.abs(
+									tf.subtract(tf.pow(ground_truth_input, 4), tf.pow(predictions, 4))
+								), axis=1)
+							)
 		elif config["loss_function"] == "power_mean":
 			loss = tf.reduce_mean(tf.pow(tf.subtract(ground_truth_input, predictions), 4))
+		elif config["loss_function"] == "softmax":
+			loss = tf.losses.softmax_cross_entropy(
+							onehot_labels=tf.one_hot(tf.argmax(ground_truth_input, axis=1), depth=1500),
+							logits=predictions
+						)
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
@@ -90,7 +98,12 @@ if __name__ == "__main__":
 	#
 	with tf.name_scope("train"):
 		learning_rate_input = tf.placeholder(tf.float32, [], name="learning_rate_input")
-		train_step = tf.train.GradientDescentOptimizer(learning_rate_input).minimize(loss)
+		if config["optimizer"] == "adam":
+			train_step = tf.train.AdamOptimizer(learning_rate_input).minimize(loss)
+		elif config["optimizer"] == "adadelta":
+			train_step = tf.train.AdadeltaOptimizer(learning_rate_input).minimize(loss)
+		else:
+			train_step = tf.train.GradientDescentOptimizer(learning_rate_input).minimize(loss)
 
 	global_step = tf.train.get_or_create_global_step()
 	increment_global_step = tf.assign(global_step, global_step + 1)

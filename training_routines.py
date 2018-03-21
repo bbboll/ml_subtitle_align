@@ -52,7 +52,7 @@ def compute_full_vector_labels(talk, interval_count):
 			print("Could not find word {}".format(w))
 			continue
 		interval_ind = int(t // extractor.INTERVAL_SIZE)
-		index_range = [interval_ind+i for i in range(-2,2) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
+		index_range = [interval_ind+i for i in range(-3,3) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
 		talk_labels[word_ind][index_range] += np.array([extractor.compute_word_probability(i, distrib) for i in index_range])
 	return talk_labels.T
 
