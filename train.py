@@ -86,15 +86,15 @@ if __name__ == "__main__":
 							onehot_labels=tf.one_hot(tf.argmax(ground_truth_input, axis=1), depth=1500),
 							logits=predictions
 						)
-		elif config["loss_funtion"] == "reg_hit_top":
-			top_truth_mask = tf.one_hot(tf.argmax(ground_truth_input, axis=1), dtype=bool)
-			loss = tf.add(
+		elif config["loss_function"] == "reg_hit_top":
+			top_truth_mask = tf.one_hot(tf.argmax(ground_truth_input, axis=1), on_value=True, off_value=False, dtype=bool, depth=1500)
+			loss = tf.reduce_mean(tf.add(
 					tf.squared_difference(
 						tf.boolean_mask(predictions, top_truth_mask),
 						tf.reduce_max(ground_truth_input, axis=1)
 						),
 					tf.multiply(tf.reduce_mean(predictions, axis=1), 0.1)
-				)
+				))
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
