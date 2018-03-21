@@ -30,7 +30,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-12_9c8bbf453a6ac17da1914dd3f27429a8/train/model.ckpt-5")
+	model_load_checkpoint = _path("training_data/run_2018-03-21-17_0dfcaddd64fa7dde8018d7dedf97c105/train/model.ckpt-20")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d)
