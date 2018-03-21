@@ -64,6 +64,16 @@ if __name__ == "__main__":
 		if config["loss_function"] == "logsumexp":
 			# this is a smooth approximation to the maximum function
 			loss = tf.reduce_logsumexp(tf.abs(tf.subtract(ground_truth_input, predictions)))
+		elif config["loss_function"] == "reg_logsumexp":
+			loss = tf.add(
+						tf.reduce_logsumexp(tf.abs(tf.subtract(ground_truth_input, predictions))), 
+						tf.reduce_mean(tf.multiply(tf.abs(predictions), 4e3))
+					)
+		elif config["loss_function"] == "reg_max":
+			loss = tf.add(
+						tf.reduce_max(tf.abs(tf.subtract(ground_truth_input, predictions))), 
+						tf.reduce_mean(tf.multiply(tf.abs(predictions), 4e2))
+					)
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,

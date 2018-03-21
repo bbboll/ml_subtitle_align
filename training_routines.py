@@ -78,7 +78,7 @@ def xbatches(batch_size, training=True):
 					continue
 				mfcc_features = np.load(talk.features_path())
 				interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
-				mfcc_features = mfcc_features[:interval_count*mfcc_per_interval]
+				mfcc_features = mfcc_features[:interval_count*mfcc_per_interval,:]
 				mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
 				features = np.concatenate((features, mfcc_features), axis=0)
 
@@ -93,3 +93,12 @@ def xbatches(batch_size, training=True):
 				labels = labels[batch_size:]
 	except StopIteration:
 		return
+
+if __name__ == '__main__':
+	first_features = []
+	for features, label in xbatches(2910):
+		first_features.append(features[4,19,:])
+		if len(first_features) == 8:
+			break
+
+	print(first_features)
