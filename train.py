@@ -15,7 +15,7 @@ from training_routines import get_training_save_paths
 
 if __name__ == "__main__":
 	tf.logging.set_verbosity(tf.logging.INFO)
-	model_load_checkpoint = None # _get_full_path("models", "train", "model.ckpt-1")
+	model_load_checkpoint = _get_full_path("training_data", "run_2018-03-21-12_ca06cd513eee240cf3dd3652a69c4553", "train", "model.ckpt-2")
 
     # change directory to ml_subtitle_align/ folder
 	# start Tensorboard with command:
@@ -74,6 +74,10 @@ if __name__ == "__main__":
 						tf.reduce_max(tf.abs(tf.subtract(ground_truth_input, predictions))), 
 						tf.reduce_mean(tf.multiply(tf.abs(predictions), 4e2))
 					)
+		elif config["loss_function"] == "power_max":
+			loss = tf.pow(tf.reduce_mean(tf.reduce_max(tf.pow(tf.subtract(ground_truth_input, predictions), 4), axis=1)), 0.25)
+		elif config["loss_function"] == "power_mean":
+			loss = tf.reduce_mean(tf.pow(tf.subtract(ground_truth_input, predictions), 4))
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
@@ -113,7 +117,7 @@ if __name__ == "__main__":
 	start_step = 1
 	if model_load_checkpoint != None:
 		model.load_variables_from_checkpoint(sess, model_load_checkpoint)
-		start_step = global_step.eval(session=sess)
+		#start_step = global_step.eval(session=sess)
 
 	tf.logging.info("Training from step: %d", start_step)
 
@@ -155,7 +159,7 @@ if __name__ == "__main__":
 			)
 			if batch_ii % batch_log_interval == 0:
 				train_writer.add_summary(train_summary, data_pass)
-				tf.logging.info("Pass {} - batch {}: rate {}, mean squared error {}".format(data_pass, batch_ii, learning_rate_value, loss_value))
+				tf.logging.info("Pass {} - batch {}: rate {}, loss {}".format(data_pass, batch_ii, learning_rate_value, loss_value))
 			if batch_ii % save_step_interval == 0:
 				global_batch_step += 1
 				# save model checkpoint
@@ -181,7 +185,7 @@ if __name__ == "__main__":
 			total_loss += val_loss
 		validation_writer.add_summary(val_summary, data_pass)
 		validation_loss = total_loss/validation_batches
-		tf.logging.info("Pass {}: Mean squared error {}".format(data_pass, validation_loss))
+		tf.logging.info("Pass {}: loss {}".format(data_pass, validation_loss))
 			
 		# save model checkpoint
 		tf.logging.info("Saving to `%s-%d`", checkpoint_path, data_pass)

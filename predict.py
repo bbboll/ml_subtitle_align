@@ -94,7 +94,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("pretrained_models/0320_deep/model.ckpt-18")
+	model_load_checkpoint = _path("training_data/run_2018-03-21-10_e58c517cc1e02b83c8db91e5019babf8/train/model.ckpt-4")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d)
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 	# scale deviations nonlinearly to pronounce their differences
 	if not options.baseline:
 		for i in range(interval_count):
-			prediction_vals[i,:] -= prior_probabilities
+			#prediction_vals[i,:] -= prior_probabilities
 			prediction_vals[i,:] = np.maximum(prediction_vals[i,:], np.zeros((1500,)))
 			max_ind = argmax_n(prediction_vals[i,:], n=5)
 			prediction_vals[i,max_ind] *= 80
