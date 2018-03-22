@@ -1,0 +1,14 @@
+\chapter{Data preparation}
+
+\section{Word timing}
+
+\textbf{by Bastian Boll} \\
+
+The dataset consists of time intervals \(\lbrack t_\text{start}, t_\text{end}\rbrack\) containing a short tuple of words \((w_1,\dotsc,w_n)\). In order to match our theoretical model for this problem, we try to extract $n$ time points \(t_1,\dotsc,t_n\) such that each word in the interval is labeled with a corresponding time. The naive way is to interpolate linearly between \(t_\text{start}\) and \(t_\text{end}\). Doing this in practice reveals two problems
+\begin{enumerate}
+	\item The intervals \(\lbrack t_\text{start}, t_\text{end}\rbrack\) do not perfectly match the above mental model in real world subtitle data. Instead, subtitles are typically set to appear about $0.7$ seconds earlier than the respective words are said in the audio.
+	\item Speaker pauses, audience laughter, applause and talking speed irregularities make the time points received from a linear interpolation very imprecise.
+\end{enumerate}
+The first problem is easily adressed by introducing a constant offset of $0.7$ seconds to $t_\text{start}$. The second problem is much harder. Ideally, one would train a classifier to identify the parts of the audio which contain human speech. As the dataset at hand does not include much noise other than human speech, we decided to approximate the effect of such a classifier by merely subtracting all silence from the audio. The difference in data precision gained this way is still large.
+
+% TODO: maybe graphics with waveforms
