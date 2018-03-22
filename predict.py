@@ -12,6 +12,8 @@ from timing_demo import TimingDemo
 from scipy.optimize import fmin_cobyla
 from scipy.optimize import fmin_slsqp
 import argparse
+import datetime
+import hashlib
 import csv
 
 # abspath utitility function
@@ -196,7 +198,7 @@ if __name__ == '__main__':
 							iter = slsqp_limit
 						)
 
-		opt_time = time.time()-start_time
+		opt_time = "{}".format(time.time()-start_time)
 		print("Optimization took {} seconds".format(opt_time))
 
 		if options.save:
@@ -232,20 +234,23 @@ if __name__ == '__main__':
 						training_config["model"], 
 						options.model_loss, 
 						training_config["loss_function"], 
-						(training_config["loss_hyperparam"] if training_config["loss_function"] == "reg_hit_top" else 0), 
-						options.scale_predictions,
-						initial_sse, 
-						prediction_sse, 
-						moved_sse, 
-						talk_id, 
+						(str(training_config["loss_hyperparam"]) if training_config["loss_function"] == "reg_hit_top" else "0"), 
+						str(options.scale_predictions),
+						str(initial_sse), 
+						str(prediction_sse), 
+						str(moved_sse), 
+						str(talk_id), 
 						options.optimizer, 
-						(cobyla_limit if options.optimizer == "cobyla" else slsqp_limit), 
-						opt_time
+						(str(cobyla_limit) if options.optimizer == "cobyla" else str(slsqp_limit)), 
+						str(opt_time)
 					]
 				  ]
 		summary_hash = hashlib.md5("{}".format(summary).encode('utf-8')).hexdigest()
 		summary_path = _path("prediction_summaries/sum_{}-{}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), summary_hash))
-		np.savetxt(summary_path, summary)
+		with open(summary_path, 'w') as f:
+			writer = csv.writer(f)
+			for row in summary:
+				writer.writerow(row)
 		print("Prediction summary was written to {}".format(summary_path))
 
 	if options.demo:
