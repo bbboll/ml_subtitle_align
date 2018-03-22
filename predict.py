@@ -8,6 +8,7 @@ from preprocessing.talk import Talk
 from preprocessing.audio_tools import Sound
 from preprocessing.subtitle import Subtitle
 from training_routines import get_model_from_run
+from training_routines import compute_full_vector_labels
 from timing_demo import TimingDemo
 from scipy.optimize import fmin_cobyla
 from scipy.optimize import fmin_slsqp
@@ -63,6 +64,12 @@ def constrain_function_jacobian(x, probs=[], interval_count=0, word_indices=[]):
 	print("done")
 	return out
 
+def get_optimal_predictions(talk):
+	mfcc_features = np.load(talk.features_path())
+	mfcc_per_interval = int(extractor.INTERVAL_SIZE / 0.005)
+	interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
+	return compute_full_vector_labels(talk, interval_count)
+
 if __name__ == '__main__':
 	arguments = argparse.ArgumentParser()
 	arguments.add_argument("id", help="TED talk id.", type=int)
@@ -73,6 +80,7 @@ if __name__ == '__main__':
 	arguments.add_argument("-save", action="store_true", help="Save the results of this run.")
 	arguments.add_argument("-demo", action="store_true", help="Play demo after optimization.")
 	arguments.add_argument("-scale_predictions", action="store_true", help="Scale model predictions to reduce uniformity.")
+	arguments.add_argument("-fake_optimal", action="store_true", help="Use optimal labels from the dataset instead of predictions.")
 	options = arguments.parse_args()
 	talk_id = options.id
 
@@ -133,6 +141,9 @@ if __name__ == '__main__':
 
 	# release gpu resources
 	sess.close()
+
+	if options.fake_optimal:
+		prediction_vals = get_optimal_predictions(talk)
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
