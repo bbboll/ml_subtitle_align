@@ -106,7 +106,10 @@ if __name__ == "__main__":
 							))
 					)
 		elif config["loss_function"] == "sigmoid_cross_entropy":
-			loss = tf.losses.sigmoid_cross_entropy(ground_truth_input, predictions)
+			loss = tf.losses.sigmoid_cross_entropy(
+						tf.minimum(tf.multiply(ground_truth_input, 10), 1), 
+						predictions
+					)
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
