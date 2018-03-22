@@ -1,4 +1,5 @@
 from models.conv_lstm_model import Model
+#from models.deep_conv_model import Model
 import os.path
 import json
 import tensorflow as tf
@@ -30,7 +31,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-17_0dfcaddd64fa7dde8018d7dedf97c105/train/model.ckpt-20")
+	model_load_checkpoint = _path("training_data/run_2018-03-21-23_9fbe4594184ad6a9224f865a2bdfd407/train/model.ckpt-18")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d)

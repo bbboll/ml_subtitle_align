@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import extract_training_data as extractor
 from models.conv_lstm_model import Model
+#from models.deep_conv_model import Model
 from preprocessing.talk import Talk
 from preprocessing.audio_tools import Sound
 from preprocessing.subtitle import Subtitle
@@ -14,6 +15,7 @@ import scipy.stats
 from scipy.optimize import fmin_cobyla
 from scipy.optimize import fmin_slsqp
 import argparse
+import re
 
 def _path(relpath):
 	"""
@@ -26,6 +28,8 @@ if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extra
 	print("Execute extract_training_data first.")
 	exit()
 frequent_words = json.load(open(extractor.frequent_words_path))
+word_timings = json.load(open(extractor.word_timings_path))
+
 prior_probabilities_path = _path("data/training/word_priors.json")
 if not os.path.isfile(prior_probabilities_path):
 	print("Execute prior_probabilities.py first.")
@@ -49,7 +53,8 @@ def cost_function(x, probs, interval_count, word_indices):
 	for word_ind, t in enumerate(x):
 		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
 		interval_diffs = interval_midpoints-t
-		interval_scalars = np.exp(-interval_diffs**2 / (2*extractor.DATA_SD**2)) / (np.sqrt(2*np.pi*extractor.DATA_SD**2))
+		sd_scalar = 6
+		interval_scalars = np.exp(-interval_diffs**2 / (2*(sd_scalar*extractor.DATA_SD)**2)) / (np.sqrt(2*np.pi*(sd_scalar*extractor.DATA_SD)**2))
 		# interval_scalars = scipy.stats.norm(t, extractor.DATA_SD).pdf(interval_midpoints)
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
 	return -out
@@ -94,7 +99,7 @@ if __name__ == '__main__':
 	sess = tf.InteractiveSession()
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-12_9c8bbf453a6ac17da1914dd3f27429a8/train/model.ckpt-5")
+	model_load_checkpoint = _path("training_data/run_2018-03-21-23_9fbe4594184ad6a9224f865a2bdfd407/train/model.ckpt-18")
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 	model = Model()
 	prediction = model.test_model(input_3d)
@@ -131,23 +136,32 @@ if __name__ == '__main__':
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
-	# compute deviations from the prior probabilities
-	# scale deviations nonlinearly to pronounce their differences
+	# # compute deviations from the prior probabilities
+	# # scale deviations nonlinearly to pronounce their differences
+	# if not options.baseline:
+	# 	for i in range(interval_count):
+	# 		#prediction_vals[i,:] -= prior_probabilities
+	# 		prediction_vals[i,:] = np.maximum(prediction_vals[i,:], np.zeros((1500,)))
+	# 		max_ind = argmax_n(prediction_vals[i,:], n=5)
+	# 		prediction_vals[i,max_ind] *= 80
+
 	if not options.baseline:
 		for i in range(interval_count):
-			#prediction_vals[i,:] -= prior_probabilities
-			prediction_vals[i,:] = np.maximum(prediction_vals[i,:], np.zeros((1500,)))
-			max_ind = argmax_n(prediction_vals[i,:], n=5)
-			prediction_vals[i,max_ind] *= 80
+			threshold = 0.15
+			prediction_vals[i,:] = 1/(1+np.exp(-(prediction_vals[i,:]-threshold)))
+
 
 	presave_path = _path("optimization_demos/optimized_predictions_{}.npy".format(talk_id))
 	baseline_path = _path("optimization_demos/optimized_predictions_baseline_{}.npy".format(talk_id))
 
 	# compute initial guess
 	sound = Sound(talk.audio_path())
-	words = word_tokenize(talk.transcript)
-	filter_words = [".", ",", ";", "-", "!", "?", "--", "(Laughter)", "Laughter"]
-	clean_words = [w for w in words if not w in filter_words]
+	#p_dotspace = re.compile(r'(?:\W|^)\w+?(\.)\w+?(?:\W|$)')
+	#transcript = p_dotspace.sub(" ", talk.transcript)
+	#words = word_tokenize(transcript)
+	filter_words = [".", ",", ";", "-", "!", "?", "--", "(Laughter)", "Laughter", "(", ")", "\""]
+	clean_words = [w for (w,_) in word_timings[str(talk_id)] if not w in filter_words]
+	#clean_words = [w for w in words if not w in filter_words]
 	start_off = 12.0
 	if options.baseline:
 		if not os.path.isfile(baseline_path):
@@ -189,6 +203,12 @@ if __name__ == '__main__':
 		# 			)
 
 		np.save(presave_path, word_offsets)
+
+	# output sum of squared errors for computed alignment
+	print("SSE prediction to initial guess: {}".format(np.sum((word_offsets-initial_guess)**2)))
+	data_offsets = np.array([t for (w,t) in word_timings[str(talk_id)] if not w in filter_words])
+	print("SSE prediction to (true) data guess: {}".format(np.sum((word_offsets-data_offsets)**2)))
+	print("SSE initial guess to (true) data guess: {}".format(np.sum((data_offsets-initial_guess)**2)))
 
 	# demonstrate computed alignment
 	frequent_words_with_timing = [(t,w) for t,w in zip(word_offsets, optimization_words)]
