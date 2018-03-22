@@ -90,11 +90,19 @@ if __name__ == "__main__":
 			top_truth_mask = tf.one_hot(tf.argmax(ground_truth_input, axis=1), on_value=True, off_value=False, dtype=bool, depth=1500)
 			loss = tf.reduce_mean(tf.add(
 					tf.squared_difference(
-						tf.boolean_mask(predictions, top_truth_mask),
-						tf.reduce_max(ground_truth_input, axis=1)
+							tf.boolean_mask(predictions, top_truth_mask),
+							tf.reduce_max(ground_truth_input, axis=1)
 						),
 					tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss_hyperparam"])
 				))
+		elif config["loss_function"] == "reg_span_mse":
+			loss = tf.subtract(
+						tf.reduce_mean(tf.multiply(tf.squared_difference(predictions, ground_truth_input), config["loss_hyperparam"])),
+						tf.reduce_mean(tf.squared_difference(
+								tf.reduce_max(predictions, axis=1),
+								tf.reduce_mean(predictions, axis=1)
+							))
+					)
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
