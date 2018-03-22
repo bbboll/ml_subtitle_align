@@ -96,6 +96,8 @@ if __name__ == "__main__":
 					tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss_hyperparam"])
 				))
 		elif config["loss_function"] == "reg_span_mse":
+			# this turns out to be a very bad idea in practice
+			# the model just picks a random word, sets it to 100% probability and chooses 0% probability for every other word
 			loss = tf.subtract(
 						tf.reduce_mean(tf.multiply(tf.squared_difference(predictions, ground_truth_input), config["loss_hyperparam"])),
 						tf.reduce_mean(tf.squared_difference(
@@ -103,6 +105,8 @@ if __name__ == "__main__":
 								tf.reduce_mean(predictions, axis=1)
 							))
 					)
+		elif config["loss_function"] == "sigmoid_cross_entropy":
+			loss = tf.losses.sigmoid_cross_entropy(ground_truth_input, predictions)
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,

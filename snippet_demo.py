@@ -65,6 +65,11 @@ if __name__ == '__main__':
 	)
 	val_prediction = np.array(val_prediction).reshape((1500,))
 
+	# if the model outputs logits, we need to transform them to probabilities first
+	if training_config["loss_function"] in ["softmax", "sigmoid_cross_entropy"]:
+		odds = np.exp(val_prediction)
+		val_prediction = odds / (1 + odds)
+
 	# scale predicted probabilities to reduce uniformity
 	if options.scale_predictions:
 		threshold = 0.15

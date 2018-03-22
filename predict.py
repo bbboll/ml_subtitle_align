@@ -25,50 +25,38 @@ def _path(relpath):
 	current_dir = os.path.dirname(__file__)
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
+# scalar for standard deviation
+sd_scalar = 5
+
 def cost_function(x, probs, interval_count, word_indices):
 	out = 0.0
 	for word_ind, t in enumerate(x):
 		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
 		interval_diffs = interval_midpoints-t
-		sd_scalar = 1
 		interval_scalars = np.exp(-interval_diffs**2 / (2*(sd_scalar*extractor.DATA_SD)**2)) / (np.sqrt(2*np.pi*(sd_scalar*extractor.DATA_SD)**2))
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
 	return -out
 
 def cost_function_gradient(x, probs, interval_count, word_indices):
-	print("starting gradient eval")
 	out = np.zeros((len(x),))
-	for word_ind, t in enumerate(x):
-		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
-		interval_diffs = interval_midpoints-t
-		interval_scalars = np.exp(-interval_diffs**2 / (2*extractor.DATA_SD**2)) / (np.sqrt(2*np.pi*extractor.DATA_SD**2))
-		interval_scalars = np.multiply(interval_scalars, probs[:,word_indices[word_ind]])
-		for j, tj in enumerate(x):
-			gradient_inner = (interval_midpoints-tj)*tj / (2*extractor.DATA_SD**2)
-			out[j] += interval_scalars.dot(gradient_inner)
-	print("done")
-	return -out
+	interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
+	for i, xi in enumerate(interval_midpoints):
+		out += probs[i,word_indices] * (x-xi) * np.exp(-(x-xi)**2 / (2*(sd_scalar*extractor.DATA_SD)**2))
+	return out / (2*(sd_scalar*extractor.DATA_SD)**3*np.sqrt(2*np.pi))
 
 def constraint_function(x, probs=[], interval_count=0, word_indices=[]):
 	"""
 	Enforces correct word order
+	as well as a weak uniformity condition
 	"""
-	return np.array(x[1:])-np.array(x[:-1])
+	return x[1:]-x[:-1]
 
 def constrain_function_jacobian(x, probs=[], interval_count=0, word_indices=[]):
-	print("starting cost function jac eval")
 	out = np.zeros((len(x)-1, len(x)))
 	for i in range(len(x)-1):
 		out[i,i] = -1
 		out[i,i+1] = 1
-	print("done")
 	return out
-
-def get_optimal_predictions(talk):
-	mfcc_features = np.load(talk.features_path())
-	mfcc_per_interval = int(extractor.INTERVAL_SIZE / 0.005)
-	interval_count = int(mfcc_features.shape[0] // mfcc_per_interval)
-	return compute_full_vector_labels(talk, interval_count)
 
 if __name__ == '__main__':
 	arguments = argparse.ArgumentParser()
@@ -143,7 +131,13 @@ if __name__ == '__main__':
 	sess.close()
 
 	if options.fake_optimal:
-		prediction_vals = get_optimal_predictions(talk)
+		prediction_vals = compute_full_vector_labels(talk, interval_count)
+
+	# if the model outputs logits, we need to transform them to probabilities first
+	if training_config["loss_function"] in ["softmax", "sigmoid_cross_entropy"]:
+		odds = np.exp(prediction_vals)
+		prediction_vals = odds / (1 + odds)
+
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
@@ -171,13 +165,13 @@ if __name__ == '__main__':
 	else:
 		word_offsets = np.array(sound.interpolate_without_silence(start_off, -10.0, len(clean_words)))
 	frequent_words_with_timing = [(start_off+t,w) for t,w in zip(word_offsets, clean_words) if extractor.ps.stem(w) in frequent_words]
-	initial_guess = [t for (t,_) in frequent_words_with_timing]
+	initial_guess = np.array([t for (t,_) in frequent_words_with_timing])
 	word_indices = [frequent_words.index(extractor.ps.stem(w)) for (_,w) in frequent_words_with_timing]
 	optimization_words = [w for (_,w) in frequent_words_with_timing]
 	opt_time = 0
 
-	cobyla_limit = 800
-	slsqp_limit = 10
+	cobyla_limit = 1500
+	slsqp_limit = 100
 	if not os.path.isfile(baseline_path) and options.save:
 		np.save(baseline_path, initial_guess)
 	if os.path.isfile(presave_path):
@@ -188,6 +182,7 @@ if __name__ == '__main__':
 		
 		# perform optimization
 		if options.optimizer == "cobyla":
+			print(" Step limit is {}".format(cobyla_limit))
 			word_offsets = fmin_cobyla(
 								cost_function, 
 								initial_guess, 
@@ -197,7 +192,7 @@ if __name__ == '__main__':
 								maxfun=cobyla_limit
 							)
 		else:
-			bounds = [(start_off, talk.duration) for _ in range(len(initial_guess))]
+			print(" Step limit is {}".format(slsqp_limit))
 			word_offsets = fmin_slsqp(
 							cost_function,
 							initial_guess,
@@ -205,8 +200,8 @@ if __name__ == '__main__':
 							fprime = cost_function_gradient,
 							fprime_ieqcons = constrain_function_jacobian,
 							args = (prediction_vals, interval_count, word_indices),
-							bounds=bounds,
-							iter = slsqp_limit
+							iter = slsqp_limit,
+							iprint = 3
 						)
 
 		opt_time = "{}".format(time.time()-start_time)
@@ -224,7 +219,7 @@ if __name__ == '__main__':
 	moved_sse = np.sum((data_offsets-initial_guess)**2)
 	print("SSE initial guess to (true) data guess: {}".format(moved_sse))
 
-	if not options.baseline:
+	if not options.baseline and not options.fake_optimal:
 		# save prediction summary
 		summary = [
 					[
