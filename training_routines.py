@@ -7,6 +7,7 @@ import extract_training_data as extractor
 from sklearn.model_selection import train_test_split
 from preprocessing.talk import AllTalks
 import scipy.stats
+import re
 
 def _get_full_path(*rel_path):
 	"""Make absolute path to a file or directory in the project folder ml_subtitle_align.
@@ -94,11 +95,19 @@ def xbatches(batch_size, training=True):
 	except StopIteration:
 		return
 
-if __name__ == '__main__':
-	first_features = []
-	for features, label in xbatches(2910):
-		first_features.append(features[4,19,:])
-		if len(first_features) == 8:
-			break
+def get_model_from_run(run):
+	"""
+	Given a relative path of shape
+		run_2018-03-21-23_9fbe4594184ad6a9224f865a2bdfd407/
+	extract the (absolute) model checkpoint and training_config.json paths
+	"""
+	checkpoint_meta_path = _get_full_path("training_data", run, "train", "checkpoint")
+	checkpoint_path = ""
+	with open(checkpoint_meta_path, "r") as f:
+		line = f.readline()
+		abs_checkpoint_path = re.search(r'\"(.+)\"', line).group(0)
+		checkpoint_num = re.search(r'model.ckpt-([0-9]+)', abs_checkpoint_path).group(0)
+		checkpoint_path = _get_full_path("training_data", run, "train", checkpoint_num)
+	train_config = json.load(open(_get_full_path("training_data", run, "training_config.json")))
+	return checkpoint_path, train_config
 
-	print(first_features)

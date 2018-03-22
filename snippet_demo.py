@@ -1,10 +1,10 @@
-from models.conv_lstm_model import Model
-#from models.deep_conv_model import Model
 import os.path
 import json
 import tensorflow as tf
 import extract_training_data as extractor
 import numpy as np
+import argparse
+from training_routines import get_model_from_run
 
 def _path(relpath):
 	"""
@@ -26,14 +26,30 @@ prior_probabilities_dict = json.load(open(prior_probabilities_path))
 prior_probabilities = np.array([p for _, p in prior_probabilities_dict.items()])
 
 if __name__ == '__main__':
+	arguments = argparse.ArgumentParser()
+	arguments.add_argument("run", help="The training run from which to load the model (Path relative to ml_subtitle_align/training_data). This path needs to contain a training_config.json and a train/ directory with one or more checkpoints.", type=str)
+	arguments.add_argument("top_guesses", help="How many guesses to output for the snippet.", type=int, default=10)
+	arguments.add_argument("-scale_predictions", action="store_true", help="Scale model predictions to reduce uniformity.")
+	options = arguments.parse_args()
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
+	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-23_9fbe4594184ad6a9224f865a2bdfd407/train/model.ckpt-18")
-	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
-	model = Model()
+	model_load_checkpoint, training_config = get_model_from_run(options.run)
+	if training_config["model"] == "simple_conv":
+		from models.conv_model import Model
+	elif training_config["model"] == "dense_conv":
+		from models.conv_model import Model
+	elif training_config["model"] == "conv_lstm":
+		from models.conv_lstm_model import Model
+	elif training_config["model"] == "deep_conv":
+		from models.deep_conv_model import Model
+	if training_config["model"] == "dense_conv":
+		model = Model(hyperparams=["dense"])
+	else:
+		model = Model()
 	prediction = model.test_model(input_3d)
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
@@ -48,15 +64,23 @@ if __name__ == '__main__':
 		}
 	)
 	val_prediction = np.array(val_prediction).reshape((1500,))
-	n = 500
-	idx = (-val_prediction).argsort()[:n].astype(int)
-	print(" --- The computed {} most likely words in the snippet are --- ".format(n))
+
+	# scale predicted probabilities to reduce uniformity
+	if options.scale_predictions:
+		threshold = 0.15
+		slope = 3
+		val_prediction = 1/(1+np.exp(-slope*(val_prediction-threshold)))
+
+	# sort and output top predictions
+	idx = (-val_prediction).argsort()[:options.top_guesses].astype(int)
+	print(" --- The computed {} most likely words in the snippet are --- ".format(options.top_guesses))
 	for i in idx:
 		print("{} - {}".format(val_prediction[i], frequent_words[i]))
 
+	# output predictions with top deviation from prior probability
 	val_prediction -= prior_probabilities
-	idx = (-val_prediction).argsort()[:n].astype(int)
-	print(" --- The computed {} most interesting words in the snippet are --- ".format(n))
+	idx = (-val_prediction).argsort()[:options.top_guesses].astype(int)
+	print(" --- The computed {} most interesting words (most deviation from prior) in the snippet are --- ".format(options.top_guesses))
 	for i in idx:
 		print("{} - {}".format(val_prediction[i], frequent_words[i]))
 

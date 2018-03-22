@@ -1,22 +1,20 @@
 import os.path
-import sys
 import json
+import time
 import tensorflow as tf
 import numpy as np
 import extract_training_data as extractor
-from models.conv_lstm_model import Model
-#from models.deep_conv_model import Model
 from preprocessing.talk import Talk
 from preprocessing.audio_tools import Sound
 from preprocessing.subtitle import Subtitle
-from nltk import word_tokenize
+from training_routines import get_model_from_run
 from timing_demo import TimingDemo
-import scipy.stats
 from scipy.optimize import fmin_cobyla
 from scipy.optimize import fmin_slsqp
 import argparse
-import re
+import csv
 
+# abspath utitility function
 def _path(relpath):
 	"""
 	Returns an absolute path for the given path (which is relative to the root directory ml_subtitle_align)
@@ -24,38 +22,13 @@ def _path(relpath):
 	current_dir = os.path.dirname(__file__)
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
-if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extractor.word_timings_path):
-	print("Execute extract_training_data first.")
-	exit()
-frequent_words = json.load(open(extractor.frequent_words_path))
-word_timings = json.load(open(extractor.word_timings_path))
-
-prior_probabilities_path = _path("data/training/word_priors.json")
-if not os.path.isfile(prior_probabilities_path):
-	print("Execute prior_probabilities.py first.")
-	exit()
-prior_probabilities_dict = json.load(open(prior_probabilities_path))
-prior_probabilities = np.array([p for _, p in prior_probabilities_dict.items()])
-
-def argmax_n(arr, n=1):
-	"""
-	Computes the n maximum entries and returns the respective indices
-	"""
-	max_ind = []
-	while len(max_ind) < n:
-		ind = np.argmax(arr)
-		arr[ind] = -np.inf
-		max_ind.append(ind)
-	return max_ind
-
 def cost_function(x, probs, interval_count, word_indices):
 	out = 0.0
 	for word_ind, t in enumerate(x):
 		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
 		interval_diffs = interval_midpoints-t
-		sd_scalar = 6
+		sd_scalar = 1
 		interval_scalars = np.exp(-interval_diffs**2 / (2*(sd_scalar*extractor.DATA_SD)**2)) / (np.sqrt(2*np.pi*(sd_scalar*extractor.DATA_SD)**2))
-		# interval_scalars = scipy.stats.norm(t, extractor.DATA_SD).pdf(interval_midpoints)
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
 	return -out
 
@@ -90,19 +63,44 @@ def constrain_function_jacobian(x, probs=[], interval_count=0, word_indices=[]):
 
 if __name__ == '__main__':
 	arguments = argparse.ArgumentParser()
-	arguments.add_argument("-baseline", action="store_true")
-	arguments.add_argument("id", help="TED talk id.")
+	arguments.add_argument("id", help="TED talk id.", type=int)
+	arguments.add_argument("optimizer", help="The method of optimization to use. (cobyla or slsqp)", type=str, default="cobyla")
+	arguments.add_argument("run", help="The training run from which to load the model (Path relative to ml_subtitle_align/training_data). This path needs to contain a training_config.json and a train/ directory with one or more checkpoints.", type=str)
+	arguments.add_argument("model_loss", help="Final loss of the model to be run.", type=float, default=-1.0)
+	arguments.add_argument("-baseline", action="store_true", help="Examine baseline rather than optimizing.")
+	arguments.add_argument("-save", action="store_true", help="Save the results of this run.")
+	arguments.add_argument("-demo", action="store_true", help="Play demo after optimization.")
+	arguments.add_argument("-scale_predictions", action="store_true", help="Scale model predictions to reduce uniformity.")
 	options = arguments.parse_args()
-	talk_id = int(options.id)
+	talk_id = options.id
+
+	# load data preprocessing results
+	if not os.path.isfile(extractor.frequent_words_path) or not os.path.isfile(extractor.word_timings_path):
+		print("Execute extract_training_data first.")
+		exit()
+	frequent_words = json.load(open(extractor.frequent_words_path))
+	word_timings = json.load(open(extractor.word_timings_path))
 
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
+	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 
 	# load model
-	model_load_checkpoint = _path("training_data/run_2018-03-21-23_9fbe4594184ad6a9224f865a2bdfd407/train/model.ckpt-18")
-	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
-	model = Model()
+	model_load_checkpoint, training_config = get_model_from_run(options.run)
+	if training_config["model"] == "simple_conv":
+		from models.conv_model import Model
+	elif training_config["model"] == "dense_conv":
+		from models.conv_model import Model
+	elif training_config["model"] == "conv_lstm":
+		from models.conv_lstm_model import Model
+	elif training_config["model"] == "deep_conv":
+		from models.deep_conv_model import Model
+	if training_config["model"] == "dense_conv":
+		model = Model(hyperparams=["dense"])
+	else:
+		model = Model()
 	prediction = model.test_model(input_3d)
+	print("Loading model from checkpoint {}".format(model_load_checkpoint))
 	model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
 	# load input
@@ -136,19 +134,12 @@ if __name__ == '__main__':
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
-	# # compute deviations from the prior probabilities
-	# # scale deviations nonlinearly to pronounce their differences
-	# if not options.baseline:
-	# 	for i in range(interval_count):
-	# 		#prediction_vals[i,:] -= prior_probabilities
-	# 		prediction_vals[i,:] = np.maximum(prediction_vals[i,:], np.zeros((1500,)))
-	# 		max_ind = argmax_n(prediction_vals[i,:], n=5)
-	# 		prediction_vals[i,max_ind] *= 80
-
-	if not options.baseline:
+	# scale predicted probabilities to reduce uniformity
+	if not options.baseline and options.scale_predictions:
 		for i in range(interval_count):
 			threshold = 0.15
-			prediction_vals[i,:] = 1/(1+np.exp(-(prediction_vals[i,:]-threshold)))
+			slope = 3
+			prediction_vals[i,:] = 1/(1+np.exp(-slope*(prediction_vals[i,:]-threshold)))
 
 
 	presave_path = _path("optimization_demos/optimized_predictions_{}.npy".format(talk_id))
@@ -156,13 +147,9 @@ if __name__ == '__main__':
 
 	# compute initial guess
 	sound = Sound(talk.audio_path())
-	#p_dotspace = re.compile(r'(?:\W|^)\w+?(\.)\w+?(?:\W|$)')
-	#transcript = p_dotspace.sub(" ", talk.transcript)
-	#words = word_tokenize(transcript)
 	filter_words = [".", ",", ";", "-", "!", "?", "--", "(Laughter)", "Laughter", "(", ")", "\""]
 	clean_words = [w for (w,_) in word_timings[str(talk_id)] if not w in filter_words]
-	#clean_words = [w for w in words if not w in filter_words]
-	start_off = 12.0
+	start_off = 10.0
 	if options.baseline:
 		if not os.path.isfile(baseline_path):
 			print("No baseline data found. Please run full procedure first.")
@@ -174,44 +161,96 @@ if __name__ == '__main__':
 	initial_guess = [t for (t,_) in frequent_words_with_timing]
 	word_indices = [frequent_words.index(extractor.ps.stem(w)) for (_,w) in frequent_words_with_timing]
 	optimization_words = [w for (_,w) in frequent_words_with_timing]
+	opt_time = 0
 
-	if not os.path.isfile(baseline_path):
+	cobyla_limit = 800
+	slsqp_limit = 10
+	if not os.path.isfile(baseline_path) and options.save:
 		np.save(baseline_path, initial_guess)
 	if os.path.isfile(presave_path):
 		word_offsets = np.load(presave_path)
 	else:
 		print("Starting optimization....\n (This could take minutes.)")
-		# optimization
-		word_offsets = fmin_cobyla(
-							cost_function, 
-							initial_guess, 
-							constraint_function, 
-							args=[prediction_vals, interval_count, word_indices], 
-							consargs=[],
-							maxfun=800
+		start_time = time.time()
+		
+		# perform optimization
+		if options.optimizer == "cobyla":
+			word_offsets = fmin_cobyla(
+								cost_function, 
+								initial_guess, 
+								constraint_function, 
+								args=[prediction_vals, interval_count, word_indices], 
+								consargs=[],
+								maxfun=cobyla_limit
+							)
+		else:
+			bounds = [(start_off, talk.duration) for _ in range(len(initial_guess))]
+			word_offsets = fmin_slsqp(
+							cost_function,
+							initial_guess,
+							f_ieqcons = constraint_function,
+							fprime = cost_function_gradient,
+							fprime_ieqcons = constrain_function_jacobian,
+							args = (prediction_vals, interval_count, word_indices),
+							bounds=bounds,
+							iter = slsqp_limit
 						)
-		# bounds = [(10, talk.duration) for _ in range(len(initial_guess))]
-		# word_offsets = fmin_slsqp(
-		# 				cost_function,
-		# 				initial_guess,
-		# 				f_ieqcons = constraint_function,
-		# 				fprime = cost_function_gradient,
-		# 				fprime_ieqcons = constrain_function_jacobian,
-		# 				args = (prediction_vals, interval_count, word_indices),
-		# 				bounds=bounds,
-		# 				iter = 10
-		# 			)
 
-		np.save(presave_path, word_offsets)
+		opt_time = time.time()-start_time
+		print("Optimization took {} seconds".format(opt_time))
+
+		if options.save:
+			np.save(presave_path, word_offsets)
 
 	# output sum of squared errors for computed alignment
-	print("SSE prediction to initial guess: {}".format(np.sum((word_offsets-initial_guess)**2)))
+	initial_sse = np.sum((word_offsets-initial_guess)**2)
+	print("SSE prediction to initial guess: {}".format(initial_sse))
 	data_offsets = np.array([t for (w,t) in word_timings[str(talk_id)] if not w in filter_words])
-	print("SSE prediction to (true) data guess: {}".format(np.sum((word_offsets-data_offsets)**2)))
-	print("SSE initial guess to (true) data guess: {}".format(np.sum((data_offsets-initial_guess)**2)))
+	prediction_sse = np.sum((word_offsets-data_offsets)**2)
+	print("SSE prediction to (true) data guess: {}".format(prediction_sse))
+	moved_sse = np.sum((data_offsets-initial_guess)**2)
+	print("SSE initial guess to (true) data guess: {}".format(moved_sse))
 
-	# demonstrate computed alignment
-	frequent_words_with_timing = [(t,w) for t,w in zip(word_offsets, optimization_words)]
-	demo = TimingDemo(talk.audio_path(), Subtitle(None, None, words_with_timing=frequent_words_with_timing))
-	demo.play()
+	if not options.baseline:
+		# save prediction summary
+		summary = [
+					[
+						"model", 
+						"loss", 
+						"loss_func", 
+						"loss_hyperparam", 
+						"scale_predictions"
+						"initial_sse", 
+						"prediction_sse", 
+						"moved_sse", 
+						"talk_id", 
+						"optimizer", 
+						"steps", 
+						"duration"
+					],
+					[
+						training_config["model"], 
+						options.model_loss, 
+						training_config["loss_function"], 
+						(training_config["loss_hyperparam"] if training_config["loss_function"] == "reg_hit_top" else 0), 
+						options.scale_predictions,
+						initial_sse, 
+						prediction_sse, 
+						moved_sse, 
+						talk_id, 
+						options.optimizer, 
+						(cobyla_limit if options.optimizer == "cobyla" else slsqp_limit), 
+						opt_time
+					]
+				  ]
+		summary_hash = hashlib.md5("{}".format(summary).encode('utf-8')).hexdigest()
+		summary_path = _path("prediction_summaries/sum_{}-{}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), summary_hash))
+		np.savetxt(summary_path, summary)
+		print("Prediction summary was written to {}".format(summary_path))
+
+	if options.demo:
+		# demonstrate computed alignment
+		frequent_words_with_timing = [(t,w) for t,w in zip(word_offsets, optimization_words)]
+		demo = TimingDemo(talk.audio_path(), Subtitle(None, None, words_with_timing=frequent_words_with_timing))
+		demo.play()
 

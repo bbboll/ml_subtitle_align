@@ -93,7 +93,7 @@ if __name__ == "__main__":
 						tf.boolean_mask(predictions, top_truth_mask),
 						tf.reduce_max(ground_truth_input, axis=1)
 						),
-					tf.multiply(tf.reduce_mean(predictions, axis=1), 0.8)
+					tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss_hyperparam"])
 				))
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
