@@ -1,4 +1,27 @@
-\chapter{Results}
+\chapter{Training results}
+\label{results}
 
 \textbf{by Bastian Boll} \\
+
+The central problem of training our models lies in the structure of the labels. For each interval, we try to predict a vector in $(0,1)^{1500}$. Each component of the vector is the probability that a specific word is contained in the interval. Naturally, most entries in the vector labels are 0 because most words are not contained in any single given interval. Trying to predict the exact label vector is not a good approach, because for a good acoustic model, many words are similar. Suppose, a given interval contains the single word \emph{we}. A good acoustic model should predict \emph{we} with high probability, but it should also give nonzero probability to \emph{she}, \emph{he}, \emph{me} or other similar sounding words. If we choose a loss function which penalizes these outputs, such as a simple mean squared error loss, it will not work well in practice. In fact, because of this effect, our models resorted to predict near zero probability for every word. We can of course mitigate this problem by interpreting the model as a single- or multiclass classifier for the few words with nonzero probability and use standard loss functions (softmax cross entropy and sigmoid cross entropy respectively). However, there is still potentially some merit in constructing a custom loss function for this specific usecase of predicting multiple classes with given label probability.
+
+\section{Finding a good loss function}
+
+\textbf{by Bastian Boll} \\
+
+As outlined previously, we have multiple possible loss functions to choose from, each corresponding to a particular interpretation of the problem.
+
+\paragraph{Mean squared error} is a very bad idea in practice. The resulting models extract the wrong information from the data: instead of finding the few nonzero probabilities, they set every predicted probability close to zero. Upon closer examination, while all predicted probabilities are close to zero (between 0.001 and 0.003), we can still see that prior proabilities for each word were also somewhat extracted from the data as very frequent words like \emph{the} consistently get higher probabilities assigned to them.
+
+\paragraph{Softmax cross entropy} is the standard loss function for single class classification. In order to apply this to our problem, we need to label each interval with exactly one word. This presents some compromise for two reasons. Because the dataset is not precise, we may actually be providing wrong labels to model during training. This should not be a large problem because the intervals are large enough that this problem is not expected to occur very frequently. The second problem lies in the fact, that we need to throw away available information because one interval can easily contain multiple words.
+
+\paragraph{Sigmoid cross entropy} is the standard loss function for multi class classification. By using multiple labels, we are presented with similar compromises. We now label each interval with multiple words, if the respective word probability is above a given threshold. This mitigates the first problem of losing label information in single class classification.
+
+\paragraph{Custom loss function construction} presents the possibility to try and address both problems with the classification approaches. The main idea of our custom construction is to prioritize the model giving a high probability prediction for the word with the largest label probability in the interval. We measure this as a squared distance between the maximum label probability and the respective predicted probability. We want to also penalize a high average predicted probability. This still allows for multiple guesses as to which word is most likely, but it incentivises fewer large probabilities. 
+
+
+
+
+
+
 
