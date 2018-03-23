@@ -53,11 +53,30 @@ def compute_full_vector_labels(talk, interval_count):
 			print("Could not find word {}".format(w))
 			continue
 		interval_ind = int(t // extractor.INTERVAL_SIZE)
-		index_range = [interval_ind+i for i in range(-3,3) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
+		radius = 2
+		index_range = [interval_ind+i for i in range(-radius,radius+1) if interval_ind+i >= 0 and interval_ind+i+1 < interval_count]
 		talk_labels[word_ind][index_range] += np.array([extractor.compute_word_probability(i, distrib) for i in index_range])
 	return talk_labels.T
 
-def xbatches(batch_size, training=True):
+def compute_multi_categorical_labels(talk, interval_count):
+	"""
+	For each interval, return a vector of shape (,1500) containing integer
+	labels in (0,1).
+	"""
+	talk_labels = np.zeros((1500, interval_count), dtype=int)
+	for (w, t) in word_timings[str(talk.ID)]:
+		distrib = scipy.stats.norm(t, extractor.DATA_SD)
+		word_ind = None
+		try:
+			word_ind = frequent_words.index(extractor.ps.stem(w))
+		except ValueError:
+			print("Could not find word {}".format(w))
+			continue
+		interval_ind = int(t // extractor.INTERVAL_SIZE)
+		talk_labels[word_ind][interval_ind] = 1
+	return talk_labels.T
+
+def xbatches(batch_size, training=True, full=True):
 	"""Batch MFCC data, labels together.
 	"""
 	talk_limit = None
@@ -83,7 +102,10 @@ def xbatches(batch_size, training=True):
 				mfcc_features = mfcc_features.reshape((interval_count,mfcc_per_interval,13))
 				features = np.concatenate((features, mfcc_features), axis=0)
 
-				talk_labels = compute_full_vector_labels(talk, interval_count)
+				if full:
+					talk_labels = compute_full_vector_labels(talk, interval_count)
+				else:
+					talk_labels = compute_multi_categorical_labels(talk, interval_count)
 				labels = np.concatenate((labels, talk_labels), axis=0)
 			else:
 				yield (

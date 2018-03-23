@@ -107,9 +107,10 @@ if __name__ == "__main__":
 					)
 		elif config["loss_function"] == "sigmoid_cross_entropy":
 			loss = tf.losses.sigmoid_cross_entropy(
-						tf.minimum(tf.multiply(ground_truth_input, 10), 1), 
+						ground_truth_input, 
 						predictions
 					)
+			#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = ground_truth_input, logits = predictions))
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
@@ -184,7 +185,7 @@ if __name__ == "__main__":
 		#
 		# 	--- training inner loop ---
 		#
-		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(batch_size, training=True)):
+		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(batch_size, training=True, full=(not config["loss_function"] == "softmax_cross_entropy"))):
 			train_summary, loss_value, _, _ = sess.run(
 				[merged_summaries, loss, train_step, increment_global_step],
 				feed_dict={
@@ -209,7 +210,7 @@ if __name__ == "__main__":
 		total_loss = 0
 		validation_batches = 0
 		total_cf_matrix = None
-		for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False)):
+		for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False, full=(not config["loss_function"] == "softmax_cross_entropy"))):
 			val_summary, val_loss = sess.run(
 				[merged_summaries, loss],
 				feed_dict={
