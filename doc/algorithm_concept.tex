@@ -35,7 +35,7 @@ Hence, we can define $D_w$ through
 	D_w(t) = \sum_i p_i \rho_{t,\sigma}(t_i)
 \]
 for each center point $t_i$ of $I_i$. This construction satisfies the smoothness required for optimization. It also considers the inherent imprecision of word time points in the dataset and provides a means of leveraging information computed by the machine learning model without requiring perfect prediction accuracy.\\
-Additionally, by interpreting the time alignment as a global optimization problem under word order constraints, we can make effective use of the known word order and reduce the impact of single (local) bad predictions by the model.  
+Additionally, by interpreting the time alignment as a global optimization problem under word order constraints, we can make effective use of the known word order and reduce the impact of single (local) bad predictions by the model.
 
 \section{Computing probabilities for each interval}
 \label{interval_word_prob}
@@ -62,7 +62,20 @@ For the main speech recognition part, we trained several supervised models. The 
 \begin{enumerate}
 	\item \textbf{Convolutional LSTM neural network} \\
 	This model is a combination of a convolutional neural network and a LSTM network. The input vector will be put into a dynamic RNN cell of type \newline\textit{tf.contrib.rnn.Conv2DLSTMCell} in TensorFlow. Its output is then flattened and will be encoded by two dense layers into the label space.
+	\begin{figure}[h]
+		\centering
+		\begin{tabular}{|l|l|l|l|l|l|}
+			\hline \textbf{Nr} & \textbf{Type} & \textbf{Channels} & \textbf{Width} & \textbf{Height} & \textbf{Kernel Size} \\ \hline
+			0 & Input & 1 & 80 & 13 & \\ \hline
+			1 & Conv2DLSTM & 1 & 80 & 13 & 3x3 \\ \hline
+			2 & Dense & 1000 & & & \\ \hline
+			& Sigmoid & 1000 & & & \\ \hline
+			3 & Dense & 1500 & & & \\ \hline
+			& Sigmoid & 1000 & & & \\ \hline
+		\end{tabular}
+		\caption[Convolutional LSTM structure]{Graph structure of convolutional LSTM network.}
+	\end{figure}
 	\item \textbf{Deep convolutional neural network} \\
-	This model is a combination of six consecutive convolutional neural networks, each followed by activation. The output is also here flattened and will then be encoded by two dense layers into the label space. We got the idea by the blog post by Harutyunyan and Khachatrian as they did reach an accuracy of 99.24\%.
+	This model is a combination of six consecutive convolutional neural networks, each followed by activation. The output is also here flattened and will then be encoded by two dense layers into the label space. We got the idea by the blog post\footnote{\url{https://yerevann.github.io/2016/06/26/combining-cnn-and-rnn-for-spoken-language-identification/}} by Harutyunyan and Khachatrian as they did reach an accuracy of 99.24\%.
 \end{enumerate}
 We also implemented a model leaning on the implementation of TensorFlows' convolutional neural network for speech recognition in the example \textit{speech\_commands}\footnote{\url{https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/speech\_commands/models.py}}. Unfortunately, this network did not deliver any usable results.
