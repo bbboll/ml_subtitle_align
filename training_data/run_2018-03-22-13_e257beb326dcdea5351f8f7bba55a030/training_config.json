@@ -1,0 +1,12 @@
+{
+	"model": "deep_conv",
+	"keep_probability": 1.0,
+	"loss_function": "reg_hit_top",
+	"loss_hyperparam": 0.5,
+	"batch_log_interval": 1000,
+	"save_step_interval": 3000,
+	"batch_size": 300,
+	"passes_list": [2,2],
+	"learning_rates_list": [0.01,0.001],
+	"optimizer": "gd"
+}

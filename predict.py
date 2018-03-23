@@ -27,6 +27,7 @@ def _path(relpath):
 
 # scalar for standard deviation
 sd_scalar = 5
+cost_scalar = 1e3
 
 def cost_function(x, probs, interval_count, word_indices):
 	out = 0.0
@@ -35,14 +36,14 @@ def cost_function(x, probs, interval_count, word_indices):
 		interval_diffs = interval_midpoints-t
 		interval_scalars = np.exp(-interval_diffs**2 / (2*(sd_scalar*extractor.DATA_SD)**2)) / (np.sqrt(2*np.pi*(sd_scalar*extractor.DATA_SD)**2))
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
-	return -out
+	return -out * cost_scalar
 
 def cost_function_gradient(x, probs, interval_count, word_indices):
 	out = np.zeros((len(x),))
 	interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
 	for i, xi in enumerate(interval_midpoints):
 		out += probs[i,word_indices] * (x-xi) * np.exp(-(x-xi)**2 / (2*(sd_scalar*extractor.DATA_SD)**2))
-	return out / (2*(sd_scalar*extractor.DATA_SD)**3*np.sqrt(2*np.pi))
+	return out / (2*(sd_scalar*extractor.DATA_SD)**3*np.sqrt(2*np.pi)) * cost_scalar
 
 def constraint_function(x, probs=[], interval_count=0, word_indices=[]):
 	"""
@@ -170,7 +171,7 @@ if __name__ == '__main__':
 	opt_time = 0
 
 	cobyla_limit = 1500
-	slsqp_limit = 200
+	slsqp_limit = 1000
 	if not os.path.isfile(baseline_path) and options.save:
 		np.save(baseline_path, initial_guess)
 	if os.path.isfile(presave_path):

@@ -57,3 +57,7 @@ doc/*.pdf
 !data/audio/2696.mp3
 !data/audio_features/2740.npy
 !data/audio_features/2696.npy
+
+# don't ignore pretrained training configs
+!training_data/*/training_config.json
+!training_data/*/hardware_config.json
