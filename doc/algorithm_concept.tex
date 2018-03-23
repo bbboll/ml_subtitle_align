@@ -34,7 +34,8 @@ Hence, we can define $D_w$ through
 \[
 	D_w(t) = \sum_i p_i \rho_{t,\sigma}(t_i)
 \]
-for each center point $t_i$ of $I_i$. This construction satisfies the smoothness required for optimization. It also considers the inherent imprecision of word time points in the dataset and provides a means of leveraging information computed by the machine learning model without requiring perfect prediction accuracy.
+for each center point $t_i$ of $I_i$. This construction satisfies the smoothness required for optimization. It also considers the inherent imprecision of word time points in the dataset and provides a means of leveraging information computed by the machine learning model without requiring perfect prediction accuracy.\\
+Additionally, by interpreting the time alignment as a global optimization problem under word order constraints, we can make effective use of the known word order and reduce the impact of single (local) bad predictions by the model.  
 
 \section{Computing probabilities for each interval}
 \label{interval_word_prob}
