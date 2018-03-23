@@ -138,13 +138,12 @@ if __name__ == '__main__':
 		odds = np.exp(prediction_vals)
 		prediction_vals = odds / (1 + odds)
 
-
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
 	# scale predicted probabilities to reduce uniformity
 	if not options.baseline and options.scale_predictions:
 		for i in range(interval_count):
-			threshold = 0.15
+			threshold = np.mean(prediction_vals)+np.mean(np.std(prediction_vals, axis=1))
 			slope = 3
 			prediction_vals[i,:] = 1/(1+np.exp(-slope*(prediction_vals[i,:]-threshold)))
 
