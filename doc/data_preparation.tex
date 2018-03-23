@@ -10,6 +10,20 @@ The dataset consists of time intervals \(\lbrack t_\text{start}, t_\text{end}\rb
 	\item The intervals \(\lbrack t_\text{start}, t_\text{end}\rbrack\) do not perfectly match the above mental model in real world subtitle data. Instead, subtitles are typically set to appear about $0.7$ seconds earlier than the respective words are said in the audio.
 	\item Speaker pauses, audience laughter, applause and talking speed irregularities make the time points received from a linear interpolation very imprecise.
 \end{enumerate}
-The first problem is easily adressed by introducing a constant offset of $0.7$ seconds to $t_\text{start}$. The second problem is much harder. Ideally, one would train a classifier to identify the parts of the audio which contain human speech. As the dataset at hand does not include much noise other than human speech, we decided to approximate the effect of such a classifier by merely subtracting all silence from the audio. The difference in data precision gained this way is still large.
+The first problem is easily adressed by introducing a constant offset of $0.7$ seconds to $t_\text{start}$. The second problem is much harder. Ideally, one would train a classifier to identify the parts of the audio which contain human speech. As the dataset at hand does not include much noise other than human speech, we decided to approximate the effect of such a classifier by merely subtracting all silence from the audio. The difference in data precision gained this way is still large.\\
+Extracting a single time point for each word in a continuously spoken audio track is in fact difficult to do. It is to be expected, that even labeling of a respective track by hand is subject to imprecisions. The described method of interpolating linearly after removal of silence already comes close to it with respect to precision and is much more scalable.
 
 % TODO: maybe graphics with waveforms
+
+\section{Reduction of label count}
+
+\textbf{by Bastian Boll} \\
+
+With regard to the optimization model described in chapter \ref{chap:algorithm} we need to reduce the number of distinct words (classes) to be considered by the machine learning model. For this purpose, we count the number of occurences for each word(-stem) in the transcripts. We observe the following:
+\begin{enumerate}
+	\item The dataset consists of $5.3$ million words from $75$ thousand word stems.
+	\item About half of all stems only appear once.
+	\item 1956 stems appear at least 200 times. They cover 90\% of the text
+	\item 1488 stems appear at least 300 times. They cover 89\% of the text.
+\end{enumerate}
+Based on these insights, we will only consider the 1500 most frequent word stems. Statistically, about one in ten words in the transcript will therefore not be aligned by the algorithm. However, long strings of unaligned words are unlikely to occur, as the 1500 considered words are also distributed fairly evenly in the text. 
