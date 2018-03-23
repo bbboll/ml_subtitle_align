@@ -4,24 +4,24 @@
 
 \textbf{by Paul Warkentin} \\
 
-The state of the art method for feature extraction from audio for speech recognition purposes is to use Mel Frequency Cepstral Coefficients (MFCC). They were introduced in 1980 by Davis and Mermelstein, and the European Telecommunications Standards Institute (ETSI) defined a standardised MFCC algorithm to be used in mobile phones. \\
-Based on the underlying assumption, that audio frequencies change very little over very short intervals of time, the signal is divided into 10ms intervals. For each interval, a sequence of transformations is applied, resulting in 13 coefficients.
+The state of the art method for feature extraction from audio for speech recognition purposes is to use Mel Frequency Cepstral Coefficients (MFCC). They were introduced in 1980 by Davis and Mermelstein, and the European Telecommunications Standards Institute (ETSI) defined a standardised MFCC algorithm to be used in mobile phones.
 
-% TODO: more about MFCC mechanism
+Based on the underlying assumption, that audio frequencies change very little over very short intervals of time, the signal is divided into 25ms intervals. For each interval, a sequence of transformations is applied, resulting in 13 coefficients. The algorithm is very complex, which is why I will not discuss it here in detail. The steps for the calculation of the MFCCs are the following:
+\begin{enumerate}
+  \item \textit{Frame the signal into shorter frames.} As described above, we assume that the audio signal is constant over a short time to simplify the complexity of audio signals.
+  \item \textit{Calculate the power spectrum of each frame.} This step is motivated by an human organ in the ear, the cochlea. It vibrates at different spots depending on the frequency of detected sounds. The brain is then informed by different nerves on the frequency. Calculating the periodogram estimate of the power spectrum delivers a similar behaviour here by giving information about the different frequencies in the frame.
+  \item \textit{Apply mel filterbank to the power spectra.} The periodogram spectral estimate still contains a lot unneeded information. With the mel filterbank, we can sum the energy in various frequency regions for each frame. We are only interested in roughly how much energy occurs at each spot.
+  \item \textit{Take the logarithm of all filterbank energies.} Also motivated by the human being, we do not differentiate loudness on a linear scale. That is why we take the logarithm because it also allows us to use cepstral mean subtraction, a channel normalization technique.
+  \item \textit{Take the discrete cosine transformation of the log filterbank energies.} At last, compute the DCT of the previously calculated log filterbank energies. Because the filterbanks are all overlapping, the filterbank energies are quite correlated with each other. The discrete cosine transformation decorrelates the energies. Discard all but 13 of the total 26 DCT coefficients, because those represent fast changes in the filterbank energies which has negative influence on speech recognition.
+\end{enumerate}
 
-MFCC can be used to identify all the parts of the audio that belong to linguistic content and distinguish these from those parts in the audio signal which carry information about silence, background noise, laughter etc.
+MFCC can be used to identify all the parts of the audio that belong to linguistic content and distinguish these from those parts in the audio signal which carry information about silence, background noise, laughter etc. \\
+
+We decided to use the Python library \textit{python\_speech\_features}\footnote{\url{https://github.com/jameslyons/python_speech_features}} to calculate the MFCC as it is a highly complex and error-prone algorithm.
 
 \section{Classification}
 
 \textbf{by Paul Warkentin} \\
 
-The main part of this project is the classification of extracted audio signals of linguistic content. This is a typical problem in the field of speech recognition, for which convolutional neural networks are a widely used class of deep, feed-forward artificial neural networks. \\
+The main part of this project is the classification of extracted audio signals of linguistic content. This is a typical problem in the field of speech recognition, for which convolutional neural networks are a widely used class of deep, feed-forward artificial neural networks.
 An important feature of convolutional neural networks is that they are translation invariant. The input data for our model are intervals containing MFCC datapoints. Because we do not know where in the interval the features which determine the word being said are localized, the shift invariance feature of convolutional neural networks is ideal for the speech recognition part in our problem.
-
-% For speech recognition, convolutional networks are a widely used form of deep learning models. That is why we built our graph using two convolutional layers, followed by ReLU layers. The output of the first ReLU layer is also pooled. At the end, the output of the second ReLU layer is transformed by two dense layers into the result of the model.
-
-% \begin{figure}
-%     \centering
-%     \includegraphics[width=\textwidth]{\RootPath/graphics/graph}
-%     \caption{Classifier}
-% \end{figure}
