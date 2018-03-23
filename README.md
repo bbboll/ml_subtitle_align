@@ -22,7 +22,7 @@ Once all previous steps have (at least partially) finished, you can execute `dow
 
 More specifically, [python_speech_features](https://github.com/jameslyons/python_speech_features) is used to extract [MFCC](https://de.wikipedia.org/wiki/Mel_Frequency_Cepstral_Coefficients) features with a 25ms analysis window and 10ms step between successive windows.
 
-Consequently, you can need to run `generate_metamap.py` which will generate necessary metadata.
+Consequently, you can `generate_metamap.py` which will generate necessary metadata.
 
 ## Training
 Create a `training_config.json` and a `hardware_config.json` from the provided default examples. In this config file, you can specify which model to train (options are: "conv_lstm", "dense_conv", "deep_conv", "simple_conv") as well as which loss function (options are: "softmax", "sigmoid_cross_entropy", "reg_hit_top") and optimization settings to use.
