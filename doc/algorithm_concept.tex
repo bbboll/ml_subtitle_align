@@ -52,7 +52,6 @@ for $s = k-2, k-1, \dots, k+2$. \\
 Hence, we got the features and its labels for the supervised learning model described in the section below. \\
 The MFCC features for an audio file are reshaped into a matrix of shape $\lbrack l, m \rbrack$, where $m$ is the number of MFCC samples for an interval of length $l$.
 
-\newpage
 \section{Defining the models}
 
 \textbf{by Paul Warkentin} \\
@@ -85,7 +84,6 @@ This model is derived from  TensorFlows' convolutional neural network for speech
 \end{figure}
 \FloatBarrier
 
-\newpage
 \subsection*{Deep convolutional neural network}
 This model is a combination of six consecutive convolutional neural networks, each followed by activation. The output is also here flattened and will then be encoded by two dense layers into the label space. We got the idea by the blog post\footnote{\url{https://yerevann.github.io/2016/06/26/combining-cnn-and-rnn-for-spoken-language-identification/}} by Harutyunyan and Khachatrian as they did reach an accuracy of 99.24\%.
 \begin{figure}[!htbp]
@@ -112,7 +110,6 @@ This model is a combination of six consecutive convolutional neural networks, ea
 \end{figure}
 \FloatBarrier
 
-\newpage
 \subsection*{Convolutional LSTM neural network}
 This model is a combination of a convolutional neural network and a LSTM network. The input vector will be put into a dynamic RNN cell of type \newline\textit{tf.contrib.rnn.Conv2DLSTMCell} in TensorFlow. Its output is then flattened and will be encoded by two dense layers into the label space.
 \begin{figure}[h]
