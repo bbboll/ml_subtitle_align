@@ -58,3 +58,15 @@ doc/*.pdf
 
 # don't ignore demo files
 !snippet_demo/*
+
+# don't ignore sample talk files
+!data/audio/2740.mp3
+!data/audio/2696.mp3
+!data/audio_features/2740.mp3
+!data/audio_features/2696.mp3
+
+# don' ignore sample pretrained models
+!training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/*
+!training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/*/*
+!training_data/run_2018-03-22-23_482664c2e059a08af9f0c357f5d012a9/*
+!training_data/run_2018-03-22-23_482664c2e059a08af9f0c357f5d012a9/*/*

@@ -7,7 +7,7 @@ This project is a mini research project created in fulfillment of requirements f
 ## Getting started
 This repository contains all necessary code for both training and prediction. To perform training, you will need to follow the procedure outlined under "Data aquisition" to download the necessary audio material (about 40GB) and extract MFCC features from it (another 40GB of disk space required). 
 
-For prediction, you can use one of the pretrained models located in `ml_subtitle_align/training_data/run_*/train/`. Simple prediction for an audio snippet can be performed by executing `snippet_demo.py`. To compute alignment information for a whole TED-talk, choose one of the example talks in `ml_subtitle_align/data/audio` and execute `predict.py` with the required arguments.
+For prediction, you can use one of the pretrained models located in `ml_subtitle_align/training_data/run_*/train/`. Simple prediction for an audio snippet can be performed by executing `snippet_demo.py`. To compute alignment information for a whole TED-talk, choose one of the example talks in `ml_subtitle_align/data/audio` and execute `predict.py` with the required arguments. Note, that these talks were not part of the training dataset.
 
 ## Prerequisites
 The code in this repo is expected to be run with Python `3.*`. Additional library requirements are listed in `requirements.txt`. You will also need to install `ffmpeg` for extracting audio from fetched video files.
