@@ -1,0 +1,6 @@
+model_checkpoint_path: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/train/model.ckpt-14"
+all_model_checkpoint_paths: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/train/model.ckpt-10"
+all_model_checkpoint_paths: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/train/model.ckpt-11"
+all_model_checkpoint_paths: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/train/model.ckpt-12"
+all_model_checkpoint_paths: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/train/model.ckpt-13"
+all_model_checkpoint_paths: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-23-10_f487f951a53c2accebf5286eee963e1f/train/model.ckpt-14"

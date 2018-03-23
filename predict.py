@@ -170,7 +170,7 @@ if __name__ == '__main__':
 	opt_time = 0
 
 	cobyla_limit = 1500
-	slsqp_limit = 100
+	slsqp_limit = 200
 	if not os.path.isfile(baseline_path) and options.save:
 		np.save(baseline_path, initial_guess)
 	if os.path.isfile(presave_path):
