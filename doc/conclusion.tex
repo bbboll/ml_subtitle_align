@@ -2,8 +2,8 @@
 
 \textbf{by Bastian Boll and Paul Warkentin} \\
 
-In summary, we could successfully tackle the problem of automatic subtitle alignment. The results depend on the class of neural network and the loss function that was used during the training process. At the end, the most difficult parts to implement were the nearly exact extraction of the timings of each spoken word as well as the optimization part after the neural network training. \\
+In summary, we could successfully tackle the problem of automatic subtitle alignment. The results depend on the class of neural network and the loss function that was used during the training process. In the end, the most difficult parts to implement were the nearly exact extraction of the timings of each spoken word as well as the optimization process and loss function considerations. \\
 
-For training the classifier, we used an Intel(???) machine with ???. \\
+The latter still presents  opportunity for improvement, as the time required is very inconsistent and overall fairly large. The problem of the optimizer converging towards wrong local minima could also be addressed by a globalization strategy or by introducing a regularization term to make the computed distribution of words more uniform.\\
 
-Mastering this type of problems with neural networks enables one to apply it to different problems than automatic subtitle alignment. Such as for example, it could be the base for an advanced concept to automatically indicate the progress of an orchestra playing a classical piece of music.
+Mastering this type of problems with neural networks may also enable application of similar methods to adjacent problem domains such as indicating the progress of an orchestra playing a classical piece of music.

@@ -65,18 +65,18 @@ This model is derived from  TensorFlows' convolutional neural network for speech
 \begin{figure}[h]
 	\centering
 	\makebox[\textwidth][c]{
-		\begin{tabular}{|l|l|l|l|l||l|l|l|l|l|l|l|}
+		\begin{tabular}{clccc||clccc}
 			\hline \textbf{Nr} & \textbf{Type} & \textbf{\#Ch.} & \textbf{Wd.} & \textbf{Hgt.} & \textbf{Nr} & \textbf{Type} & \textbf{\#Ch.} & \textbf{Wd.} & \textbf{Hgt.} \\ \hline
-			0 & Input & 1 & 80 & 13 & 3 & Conv2D & 64 & 4 & 10 \\ \hline
-			1 & Conv2D & 64 & 8 & 20 & & Bias & 64 & 4 & 10 \\ \hline
-			& Bias & 64 & 8 & 20 & & ReLU & 64 & 4 & 10 \\ \hline
-			& ReLU & 64 & 8 & 20 & & Dropout & 64 & 4 & 10 \\ \hline
-			& Dropout & 64 & 8 & 20 & 4 & MatMul & 1500 & & \\ \hline
-			& MaxPool & 1 & 2 & 1 & & Bias & 1500 & & \\ \hline
-			2 & Conv2D & 64 & 4 & 10 & & & & & \\ \hline
-			& Bias & 64 & 4 & 10 & & & & & \\ \hline
-			& ReLU & 64 & 4 & 10 & & & & & \\ \hline
-			& Dropout & 64 & 4 & 10 & & & & & \\ \hline
+			0 & Input & 1 & 80 & 13 & 3 & Conv2D & 64 & 4 & 10 \\
+			1 & Conv2D & 64 & 8 & 20 & & Bias & 64 & 4 & 10 \\
+			& Bias & 64 & 8 & 20 & & ReLU & 64 & 4 & 10 \\
+			& ReLU & 64 & 8 & 20 & & Dropout & 64 & 4 & 10 \\
+			& Dropout & 64 & 8 & 20 & 4 & MatMul & 1500 & & \\
+			& MaxPool & 1 & 2 & 1 & & Bias & 1500 & & \\
+			2 & Conv2D & 64 & 4 & 10 & & & & & \\
+			& Bias & 64 & 4 & 10 & & & & & \\
+			& ReLU & 64 & 4 & 10 & & & & & \\
+			& Dropout & 64 & 4 & 10 & & & & & \\
 			& MaxPool & 1 & 2 & 1 & & & & & \\ \hline
 		\end{tabular}
 	}
@@ -89,20 +89,20 @@ This model is a combination of six consecutive convolutional neural networks, ea
 \begin{figure}[!htbp]
 	\centering
 	\makebox[\textwidth][c]{
-		\begin{tabular}{|l|l|l|l|l||l|l|l|l|l|l|l|}
+		\begin{tabular}{clccc||clccc}
 			\hline \textbf{Nr} & \textbf{Type} & \textbf{\#Ch.} & \textbf{Wd.} & \textbf{Hgt.} & \textbf{Nr} & \textbf{Type} & \textbf{\#Ch.} & \textbf{Wd.} & \textbf{Hgt.} \\ \hline
-			0 & Input & 1 & 80 & 13 & 4 & Conv2D & 32 & 3 & 3 \\ \hline
-			1 & Conv2D & 16 & 26 & 10 & & Bias & 32 & 3 & 3 \\ \hline
-			& Bias & 16 & 26 & 10 & & ReLU & 32 & 3 & 3 \\ \hline
-			& ReLU & 16 & 26 & 10 & 5 & Conv2D & 32 & 3 & 3 \\ \hline
-			& MaxPool & 1 & 2 & 1 & & Bias & 32 & 3 & 3 \\ \hline
-			2 & Conv2D & 16 & 13 & 5 & & ReLU & 32 & 3 & 3 \\ \hline
-			& Bias & 16 & 13 & 5 & 6 & Conv2D & 32 & 3 & 3 \\ \hline
-			& ReLU & 16 & 13 & 5 & & Bias & 32 & 3 & 3 \\ \hline
-			& Dropout & 16 & & & & ReLU & 32 & 3 & 3 \\ \hline
-			& MaxPool & 1 & 2 & 1 & 7 & Dense & 1000 & & \\ \hline
-			3 & Conv2D & 32 & 5 & 5 & & Sigmoid & 1000 & & \\ \hline
-			& Bias & 32 & 5 & 5 & 8 & Dense & 1500 & & \\ \hline
+			0 & Input & 1 & 80 & 13 & 4 & Conv2D & 32 & 3 & 3 \\
+			1 & Conv2D & 16 & 26 & 10 & & Bias & 32 & 3 & 3 \\
+			& Bias & 16 & 26 & 10 & & ReLU & 32 & 3 & 3 \\
+			& ReLU & 16 & 26 & 10 & 5 & Conv2D & 32 & 3 & 3 \\
+			& MaxPool & 1 & 2 & 1 & & Bias & 32 & 3 & 3 \\
+			2 & Conv2D & 16 & 13 & 5 & & ReLU & 32 & 3 & 3 \\
+			& Bias & 16 & 13 & 5 & 6 & Conv2D & 32 & 3 & 3 \\
+			& ReLU & 16 & 13 & 5 & & Bias & 32 & 3 & 3 \\
+			& Dropout & 16 & & & & ReLU & 32 & 3 & 3 \\
+			& MaxPool & 1 & 2 & 1 & 7 & Dense & 1000 & & \\
+			3 & Conv2D & 32 & 5 & 5 & & Sigmoid & 1000 & & \\
+			& Bias & 32 & 5 & 5 & 8 & Dense & 1500 & & \\
 			& ReLU & 32 & 5 & 5 & & Sigmoid & 1500 & & \\ \hline
 		\end{tabular}
 	}
@@ -114,13 +114,13 @@ This model is a combination of six consecutive convolutional neural networks, ea
 This model is a combination of a convolutional neural network and a LSTM network. The input vector will be put into a dynamic RNN cell of type \newline\textit{tf.contrib.rnn.Conv2DLSTMCell} in TensorFlow. Its output is then flattened and will be encoded by two dense layers into the label space.
 \begin{figure}[h]
 	\centering
-	\begin{tabular}{|l|l|l|l|l|l|}
+	\begin{tabular}{clccc}
 		\hline \textbf{Nr} & \textbf{Type} & \textbf{\#Channels} & \textbf{Width} & \textbf{Height} \\ \hline
-		0 & Input & 1 & 80 & 13 \\ \hline
-		1 & Conv2DLSTM & 1 & 80 & 13 \\ \hline
-		2 & Dense & 1000 & & \\ \hline
-		& Sigmoid & 1000 & & \\ \hline
-		3 & Dense & 1500 & & \\ \hline
+		0 & Input & 1 & 80 & 13 \\
+		1 & Conv2DLSTM & 1 & 80 & 13 \\
+		2 & Dense & 1000 & & \\
+		& Sigmoid & 1000 & & \\
+		3 & Dense & 1500 & & \\
 		& Sigmoid & 1500 & & \\ \hline
 	\end{tabular}
 	\caption[Convolutional LSTM structure]{Graph structure of convolutional LSTM neural network.}

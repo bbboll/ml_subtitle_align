@@ -1,5 +1,4 @@
-\chapter{Training results}
-\label{results}
+\chapter{Training procedure}
 
 \textbf{by Bastian Boll} \\
 
@@ -17,7 +16,76 @@ As outlined previously, we have multiple possible loss functions to choose from,
 
 \paragraph{Sigmoid cross entropy} is the standard loss function for multi class classification. By using multiple labels, we are presented with similar compromises. We now label each interval with multiple words, if the respective word probability is above a given threshold. This mitigates the first problem of losing label information in single class classification.
 
-\paragraph{Custom loss function construction} presents the possibility to try and address both problems with the classification approaches. The main idea of our custom construction is to prioritize the model giving a high probability prediction for the word with the largest label probability in the interval. We measure this as a squared distance between the maximum label probability and the respective predicted probability. We want to also penalize a high average predicted probability. This still allows for multiple guesses as to which word is most likely, but it incentivises fewer large probabilities. 
+\paragraph{Custom loss function construction} presents the possibility to try and address both problems with the classification approaches. The main idea of our custom construction is to prioritize the model giving a high probability prediction for the word with the largest label probability in the interval. We measure this as a squared distance between the maximum label probability and the respective predicted probability. We want to also penalize a high average predicted probability. In pratice, the latter amounts to a regularization term which is scaled by a hand optimized factor between $0.3$ and $0.5$. 
+This still allows for multiple guesses as to which word is most likely, but it incentivises fewer large probabilities.
+
+\chapter{Results}
+\label{results}
+
+\textbf{by Bastian Boll} \\
+
+We use tensorflow for GPU accellerated training of our models. Final loss values for every combination of model an loss function are summarized in the following table.
+\FloatBarrier
+\begin{table}[ht]
+	\label{tab:training_results}
+	\centering
+	\begin{tabular}{ccc}
+		\toprule
+		Model & Loss function & Final loss\\
+		\midrule
+		conv\_lstm  & softmax & 6.6850 \\
+		conv\_lstm  & custom  & 0.0218 \\
+		conv\_lstm  & sigmoid & 0.6922 \\
+		deep\_conv  & softmax & 6.7470 \\
+		deep\_conv  & custom  & 0.0227 \\
+		deep\_conv  & sigmoid & 0.6931 \\
+		dense\_conv & softmax & 6.7700 \\
+		dense\_conv & custom  & 0.0310 \\
+		dense\_conv & sigmoid & 0.7000 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Final loss values obtained in training.}
+\end{table}
+\FloatBarrier
+
+In order to quantify the prediction result accuracy, we perform the optimization procedure for a talk that was not part of the training set with the predicted probabilities and measure the sum of squared differences between the optimized time points for each word and the respective time points computed from the real subtitle. Doing this for all models and loss functions as well as for optimal labels reveals multiple key insights.
+
+\begin{enumerate}
+	\item The optimization process works well for computing time alignment with optimal labels. This is further demonstrated if one listenes to a demonstration in which the audio is played with each word superimposed at the computed time.
+	\item All models helped to increase the accuracy of the alignment from the baseline initial guess (linear interpolation over the whole talk with subtracted silence).
+	\item The required optimization time is on the order of minutes and is very inconsistent between different model predictions.
+\end{enumerate}
+
+We can also observe, that some predictions lead the optimizer to reach local minima which are not the optimal time points. This is by construction not possible for optimal labels, but an improvement is still achieved.\\
+Listening to the audio, we can see that the initial guess is already close to being sufficient for subtitle generation. The optimizer has a very slow asymptotic conververgence towards the real time points, even for perfect labels. However, a high single digit percentage improvement over the initial guess (as measured by the squared distance outlined above) is sufficient for most scenarios.
+The following table outlines the results for optimization.
+
+\FloatBarrier
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{ccccc}
+		\toprule
+		Model & Loss function & Optimizer Steps & Time (sec) & Improvement (\%)\\
+		\midrule
+		optimal labels &  & 262 & 144.87 & 22.40 \\
+		conv\_lstm  & softmax  & 391 & 186.98 & 2.17 \\
+		conv\_lstm  & custom   & 105 & 61.56 & 2.73 \\
+		conv\_lstm  & sigmoid  & 144 & 83.32 & 6.07 \\
+		deep\_conv  & softmax  & 807 & 464.8 & 5.66 \\
+		deep\_conv  & custom   & 286 & 167.81 & 7.44 \\
+		deep\_conv  & sigmoid  & 19 & 8.42 & 8.92 \\
+		dense\_conv & softmax  & 903 & 525.08 & 8.62 \\
+		dense\_conv & custom   & 130 & 76.86 & 7.17 \\
+		dense\_conv & sigmoid  & 955 & 514.32 & 11.59 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Percentage improvement over initial guess as measured by sum of squared differences to optimal time points.}
+\end{table}
+\FloatBarrier
+
+The results show, that the sigmoid cross entropy loss function is best suited to optimize for this particular measure. We can also see that the achieved results do not seem to improve with convolutional network depth. The more shallow convolutional network is able to provide sufficient results for subtitle generation if trained with a sigmoid cross entropy loss function.
+
+
 
 
 
