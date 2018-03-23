@@ -39,9 +39,9 @@ for each center point $t_i$ of $I_i$. This construction satisfies the smoothness
 Given an audio file, we divide its MFCC features into $n$ intervals $I_i$ of equal lengths $l$. If the rest part of the data $I_{n+1}$ is shorter than the length $l$, it is discarded. The result of this section will be a matrix $p$ of shape $\lbrack l, c \rbrack$, where $c$ is the fixed number of words we selected for evaluation.
 
 Since we interpolated the timing of each word in chapter \ref{data_preparation}, we can iterate for all talks through each word $w_j$ with its estimated timing $t_j$. Calculate the cumulative distribution function $\Phi_{t_j, 0.8}(x)$ with a mean value of $t_j$ and a standard deviation of 0.8. \\
-The current word $w_j$ lies in the interval with index $k = \lceil \tfrac{t_j}{l} \rceil$. For the interval $I_k$ and its neighbors $\{I_{k-3}, I_{k-2}, I_{k-1}, I_{k+1}, I_{k+2}\}$, do the cumulative mapping
+The current word $w_j$ lies in the interval with index $k = \lceil \tfrac{t_j}{l} \rceil$. For the interval $I_k$ and its neighbors $\{I_{k-2}, I_{k-1}, I_{k+1}, I_{k+2}\}$, do the cumulative mapping
 \[p_{j, s} \mapsto p_{j, s} + \Phi_{t_j, 0.8}((s - 1) l) - \Phi_{t_j, 0.8}(s l),\]
-for $s = k-3, k-2, \dots, k+2$. \\
+for $s = k-2, k-1, \dots, k+2$. \\
 
 Hence, we got the features and its labels for the supervised learning model described in the section below. \\
 The MFCC features for an audio file are reshaped into a matrix of shape $\lbrack l, m \rbrack$, where $m$ is the number of MFCC samples for an interval of length $l$.
