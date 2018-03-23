@@ -30,7 +30,7 @@ Create a `training_config.json` and a `hardware_config.json` from the provided d
 Each training run generates a directory in `ml_subtitle_align/training_data/` as its output.
 
 ## Prediction
-You can either perform prediction for a single audio snippet
+You can either perform prediction for a single audio snippet using `snippet_demo.py` or predict alignment for a whole TED talk by using `predict.py`. Both scripts have help menus to describe necessary parameters.
 
 ## License
 All python code in this repository is available under an MIT license. All files in `ml_subtitle_align/data/` and `ml_subtitle_align/snippet_demo/` are copies or derivatives of content owned by [TED](https://www.ted.com) and are hence [subject to additional restrictions](https://www.ted.com/about/our-organization/our-policies-terms/ted-talks-usage-policy).
