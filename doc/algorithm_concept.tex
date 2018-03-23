@@ -86,24 +86,6 @@ This model is derived from  TensorFlows' convolutional neural network for speech
 \FloatBarrier
 
 \newpage
-\subsection*{Convolutional LSTM neural network}
-This model is a combination of a convolutional neural network and a LSTM network. The input vector will be put into a dynamic RNN cell of type \newline\textit{tf.contrib.rnn.Conv2DLSTMCell} in TensorFlow. Its output is then flattened and will be encoded by two dense layers into the label space.
-\begin{figure}[h]
-	\centering
-	\begin{tabular}{|l|l|l|l|l|l|}
-		\hline \textbf{Nr} & \textbf{Type} & \textbf{Channels} & \textbf{Width} & \textbf{Height} \\ \hline
-		0 & Input & 1 & 80 & 13 \\ \hline
-		1 & Conv2DLSTM & 1 & 80 & 13 \\ \hline
-		2 & Dense & 1000 & & \\ \hline
-		& Sigmoid & 1000 & & \\ \hline
-		3 & Dense & 1500 & & \\ \hline
-		& Sigmoid & 1500 & & \\ \hline
-	\end{tabular}
-	\caption[Convolutional LSTM structure]{Graph structure of convolutional LSTM neural network.}
-\end{figure}
-\FloatBarrier
-
-\newpage
 \subsection*{Deep convolutional neural network}
 This model is a combination of six consecutive convolutional neural networks, each followed by activation. The output is also here flattened and will then be encoded by two dense layers into the label space. We got the idea by the blog post\footnote{\url{https://yerevann.github.io/2016/06/26/combining-cnn-and-rnn-for-spoken-language-identification/}} by Harutyunyan and Khachatrian as they did reach an accuracy of 99.24\%.
 \begin{figure}[!htbp]
@@ -127,5 +109,23 @@ This model is a combination of six consecutive convolutional neural networks, ea
 		\end{tabular}
 	}
 	\caption[Deep convolutional structure]{Graph structure of deep convolutional neural network.}
+\end{figure}
+\FloatBarrier
+
+\newpage
+\subsection*{Convolutional LSTM neural network}
+This model is a combination of a convolutional neural network and a LSTM network. The input vector will be put into a dynamic RNN cell of type \newline\textit{tf.contrib.rnn.Conv2DLSTMCell} in TensorFlow. Its output is then flattened and will be encoded by two dense layers into the label space.
+\begin{figure}[h]
+	\centering
+	\begin{tabular}{|l|l|l|l|l|l|}
+		\hline \textbf{Nr} & \textbf{Type} & \textbf{Channels} & \textbf{Width} & \textbf{Height} \\ \hline
+		0 & Input & 1 & 80 & 13 \\ \hline
+		1 & Conv2DLSTM & 1 & 80 & 13 \\ \hline
+		2 & Dense & 1000 & & \\ \hline
+		& Sigmoid & 1000 & & \\ \hline
+		3 & Dense & 1500 & & \\ \hline
+		& Sigmoid & 1500 & & \\ \hline
+	\end{tabular}
+	\caption[Convolutional LSTM structure]{Graph structure of convolutional LSTM neural network.}
 \end{figure}
 \FloatBarrier
