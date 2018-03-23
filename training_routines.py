@@ -132,4 +132,3 @@ def get_model_from_run(run):
 		checkpoint_path = _get_full_path("training_data", run, "train", checkpoint_num)
 	train_config = json.load(open(_get_full_path("training_data", run, "training_config.json")))
 	return checkpoint_path, train_config
-
