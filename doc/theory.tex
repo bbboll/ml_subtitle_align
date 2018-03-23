@@ -23,5 +23,8 @@ We decided to use the Python library \textit{python\_speech\_features}\footnote{
 
 \textbf{by Paul Warkentin} \\
 
-The main part of this project is the classification of extracted audio signals of linguistic content. This is a typical problem in the field of speech recognition, for which convolutional neural networks are a widely used class of deep, feed-forward artificial neural networks.
-An important feature of convolutional neural networks is that they are translation invariant. The input data for our model are intervals containing MFCC datapoints. Because we do not know where in the interval the features which determine the word being said are localized, the shift invariance feature of convolutional neural networks is ideal for the speech recognition part in our problem.
+The main part of this project is the classification of extracted audio signals of linguistic content. This is a typical problem in the field of speech recognition, for which convolutional neural networks are a widely used class of deep, feed-forward artificial neural networks. \\
+
+An important feature of convolutional neural networks is that they are translation invariant. The input data for our model are intervals containing MFCC datapoints. As described in chapter \ref{data_preparation}, we do not know where exactly in the interval the features which determine the word being said are localize. Hence, the shift invariance feature of convolutional neural networks is ideal for the speech recognition part in our problem. \\
+
+Combining a convolutional neural network with a LSTM unit for time-series prediction did give us the best result as discussed in chapter \ref{results}.
