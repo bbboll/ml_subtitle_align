@@ -27,28 +27,48 @@ def _path(relpath):
 
 # scalar for standard deviation
 sd_scalar = 5
-cost_scalar = 1e3
+cost_scalar = 1 #1e3
+
+# regularization constants
+reg_magnitude = 2
+reg_width = 0.001
 
 def cost_function(x, probs, interval_count, word_indices):
-	out = 0.0
+	# regularization
+	reg = np.sum(reg_magnitude*np.exp(-(1/reg_width)*(x[1:]-x[:-1])**2))
+	
+	# actual cost
+	out = 0
 	for word_ind, t in enumerate(x):
 		interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
 		interval_diffs = interval_midpoints-t
 		interval_scalars = np.exp(-interval_diffs**2 / (2*(sd_scalar*extractor.DATA_SD)**2)) / (np.sqrt(2*np.pi*(sd_scalar*extractor.DATA_SD)**2))
 		out += interval_scalars.dot(probs[:,word_indices[word_ind]])
-	return -out * cost_scalar
+
+	# scaling output can lead to faster convergence
+	return (reg - out) * cost_scalar
 
 def cost_function_gradient(x, probs, interval_count, word_indices):
+	# regularization gradient
+	reg = np.zeros((len(x),))
+	reg[0]    = 2*(reg_magnitude/reg_width) * np.exp(-(1/reg_width)*(x[1]-x[0])**2)*(x[1]-x[0])
+	reg[1:-1] = -2*(reg_magnitude/reg_width) * (
+						  np.exp(-(1/reg_width)*(x[1:-1]-x[:-2])**2)*(x[1:-1]-x[:-2]) 
+						- np.exp(-(1/reg_width)*(x[2:]-x[1:-1])**2)*(x[2:]-x[1:-1])
+					)
+	reg[-1]   = -2*(reg_magnitude/reg_width) * np.exp(-(1/reg_width)*(x[-1]-x[-2])**2)*(x[-1]-x[-2])
+
+	# cost gradient
 	out = np.zeros((len(x),))
 	interval_midpoints = np.linspace(0.5*extractor.INTERVAL_SIZE, interval_count*extractor.INTERVAL_SIZE, num=interval_count)
-	for i, xi in enumerate(interval_midpoints):
-		out += probs[i,word_indices] * (x-xi) * np.exp(-(x-xi)**2 / (2*(sd_scalar*extractor.DATA_SD)**2))
-	return out / (2*(sd_scalar*extractor.DATA_SD)**3*np.sqrt(2*np.pi)) * cost_scalar
+	for j, tj in enumerate(x):
+		out[j] = np.sum(probs[:,word_indices[j]]*(tj-interval_midpoints)*np.exp(-(tj-interval_midpoints)**2/(2*(sd_scalar*extractor.DATA_SD)**2)))
+
+	return (reg + out / (2*(sd_scalar*extractor.DATA_SD)**3*np.sqrt(2*np.pi))) * cost_scalar
 
 def constraint_function(x, probs=[], interval_count=0, word_indices=[]):
 	"""
 	Enforces correct word order
-	as well as a weak uniformity condition
 	"""
 	return x[1:]-x[:-1]
 

@@ -82,11 +82,11 @@ if __name__ == '__main__':
 	for i in idx:
 		print("{} - {}".format(val_prediction[i], frequent_words[i]))
 
-	# output predictions with top deviation from prior probability
-	val_prediction -= prior_probabilities
-	idx = (-val_prediction).argsort()[:options.top_guesses].astype(int)
-	print(" --- The computed {} most interesting words (most deviation from prior) in the snippet are --- ".format(options.top_guesses))
-	for i in idx:
-		print("{} - {}".format(val_prediction[i], frequent_words[i]))
+	# # output predictions with top deviation from prior probability
+	# val_prediction -= prior_probabilities
+	# idx = (-val_prediction).argsort()[:options.top_guesses].astype(int)
+	# print(" --- The computed {} most interesting words (most deviation from prior) in the snippet are --- ".format(options.top_guesses))
+	# for i in idx:
+	# 	print("{} - {}".format(val_prediction[i], frequent_words[i]))
 
 
