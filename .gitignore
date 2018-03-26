@@ -53,9 +53,9 @@ doc/*.pdf
 !snippet_demo/*
 
 # don't ignore sample talk files
-!data/audio/2740.mp3
+!data/audio/2772.mp3
 !data/audio/2696.mp3
-!data/audio_features/2740.npy
+!data/audio_features/2772.npy
 !data/audio_features/2696.npy
 
 # don't ignore pretrained training configs
