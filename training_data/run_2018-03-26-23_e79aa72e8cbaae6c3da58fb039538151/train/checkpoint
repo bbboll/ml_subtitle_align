@@ -1,2 +1,0 @@
-model_checkpoint_path: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-26-23_e79aa72e8cbaae6c3da58fb039538151/train/model.ckpt-1"
-all_model_checkpoint_paths: "/home/bbb/Developer/projects/ml_subtitle_align/training_data/run_2018-03-26-23_e79aa72e8cbaae6c3da58fb039538151/train/model.ckpt-1"
