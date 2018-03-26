@@ -26,11 +26,11 @@ def _path(relpath):
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
 # scalar for standard deviation
-sd_scalar = 5
+sd_scalar = 1
 cost_scalar = 1 #1e3
 
 # regularization constants
-reg_magnitude = 2
+reg_magnitude = 1
 reg_width = 0.001
 
 def cost_function(x, probs, interval_count, word_indices):
@@ -191,7 +191,7 @@ if __name__ == '__main__':
 	opt_time = 0
 
 	cobyla_limit = 1500
-	slsqp_limit = 1000
+	slsqp_limit = 2000
 	if not os.path.isfile(baseline_path) and options.save:
 		np.save(baseline_path, initial_guess)
 	if os.path.isfile(presave_path):
