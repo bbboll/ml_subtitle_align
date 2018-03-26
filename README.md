@@ -1,6 +1,6 @@
 # Subtitle Alignment
 
-The aim of this project is to compute time alignment information between (English) spoken word audio and a provided transcript of the same audio. This is done by using an acoustic model trained on a large number of [TED talks](https://ted.com) and performing a global optimization procedure with the model predictions as input. A much more in-depth discussion of this process can found in `ml_subtitle_align/doc`.
+The aim of this project is to compute time alignment information between (English) spoken word audio and a provided transcript of the same audio. This is done by using an acoustic model trained on a large number of [TED talks](https://ted.com) and performing a global optimization procedure with the model predictions as input. A much more in-depth discussion of this process can be found in `ml_subtitle_align/doc`.
 
 This project is a mini research project created in fulfillment of requirements for the course "Fundamentals of Machine Learning" at Heidelberg University in the winter semester 2017/18.
 
@@ -22,7 +22,7 @@ Once all previous steps have (at least partially) finished, you can execute `dow
 
 More specifically, [python_speech_features](https://github.com/jameslyons/python_speech_features) is used to extract [MFCC](https://de.wikipedia.org/wiki/Mel_Frequency_Cepstral_Coefficients) features with a 25ms analysis window and 10ms step between successive windows.
 
-Consequently, you can `generate_metamap.py` which will generate necessary metadata.
+Consequently, you can run `generate_metamap.py` which will generate necessary metadata.
 
 ## Training
 Create a `training_config.json` and a `hardware_config.json` from the provided default examples. In this config file, you can specify which model to train (options are: "conv_lstm", "dense_conv", "deep_conv", "simple_conv") as well as which loss function (options are: "softmax", "sigmoid_cross_entropy", "reg_hit_top") and optimization settings to use.
