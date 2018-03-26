@@ -111,6 +111,17 @@ if __name__ == "__main__":
 						predictions
 					)
 			#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = ground_truth_input, logits = predictions))
+		elif config["loss_function"] == "reg_hit_top_soft":
+			# 
+			loss = tf.subtract(
+					tf.reduce_mean(tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss_hyperparam"])),
+					tf.divide(tf.trace(tf.matmul(
+						predictions,
+						ground_truth_input,
+						transpose_b = True,
+						b_is_sparse = True
+					)), 1500)
+				)
 		else: # if config["loss_function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,

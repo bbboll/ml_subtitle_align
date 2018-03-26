@@ -26,7 +26,7 @@ def _path(relpath):
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
 # scalar for standard deviation
-sd_scalar = 1
+sd_scalar = 5
 cost_scalar = 1 #1e3
 
 # regularization constants
@@ -78,6 +78,14 @@ def constrain_function_jacobian(x, probs=[], interval_count=0, word_indices=[]):
 		out[i,i] = -1
 		out[i,i+1] = 1
 	return out
+
+def normalize_predictions(prediction_vals, word_timings):
+	"""
+	TODO: Count occurences of each word in the transcript and normalize
+		  the accumulated probabilities in the prediction to their cummulative probability.
+	"""
+	
+	return prediction_vals
 
 if __name__ == '__main__':
 	arguments = argparse.ArgumentParser()
@@ -191,7 +199,7 @@ if __name__ == '__main__':
 	opt_time = 0
 
 	cobyla_limit = 1500
-	slsqp_limit = 2000
+	slsqp_limit = 4000
 	if not os.path.isfile(baseline_path) and options.save:
 		np.save(baseline_path, initial_guess)
 	if os.path.isfile(presave_path):
