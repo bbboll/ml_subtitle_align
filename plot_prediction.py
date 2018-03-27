@@ -36,6 +36,8 @@ elif training_config["model"] == "conv_lstm":
 	from models.conv_lstm_model import Model
 elif training_config["model"] == "deep_conv":
 	from models.deep_conv_model import Model
+elif config["model"] == "big_deep_conv":
+	from models.big_deep_conv_model import Model
 if training_config["model"] == "dense_conv":
 	model = Model(hyperparams=["dense"])
 else:
