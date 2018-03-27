@@ -79,11 +79,21 @@ def constrain_function_jacobian(x, probs=[], interval_count=0, word_indices=[]):
 		out[i,i+1] = 1
 	return out
 
-def normalize_predictions(prediction_vals, word_timings):
+def normalize_predictions(prediction_vals, word_indices):
 	"""
-	TODO: Count occurences of each word in the transcript and normalize
-		  the accumulated probabilities in the prediction to their cummulative probability.
+	Count occurences of each word in the transcript and normalize
+	the accumulated probabilities in the prediction to their cummulative probability.
 	"""
+	word_counts = np.zeros((1500,))
+	for word_ind in word_indices:
+		word_counts[word_ind] += 1
+
+	for word_ind in range(1500):
+		if word_counts[word_ind] == 0:
+			prediction_vals[:,word_ind] = 0
+		else:
+			prediction_vals[:,word_ind] /= np.linalg.norm(prediction_vals[:,word_ind])
+			prediction_vals[:,word_ind] *= word_counts[word_ind]
 	
 	return prediction_vals
 
@@ -169,14 +179,6 @@ if __name__ == '__main__':
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
-	# scale predicted probabilities to reduce uniformity
-	if not options.baseline and options.scale_predictions:
-		for i in range(interval_count):
-			threshold = np.mean(prediction_vals)+np.mean(np.std(prediction_vals, axis=1))
-			slope = 3
-			prediction_vals[i,:] = 1/(1+np.exp(-slope*(prediction_vals[i,:]-threshold)))
-
-
 	presave_path = _path("optimization_demos/optimized_predictions_{}.npy".format(talk_id))
 	baseline_path = _path("optimization_demos/optimized_predictions_baseline_{}.npy".format(talk_id))
 
@@ -192,11 +194,22 @@ if __name__ == '__main__':
 		word_offsets = np.load(baseline_path)
 	else:
 		word_offsets = np.array(sound.interpolate_without_silence(start_off, -10.0, len(clean_words)))
+	# compute indexing structure
 	frequent_words_with_timing = [(start_off+t,w) for t,w in zip(word_offsets, clean_words) if extractor.ps.stem(w) in frequent_words]
-	initial_guess = np.array([t for (t,_) in frequent_words_with_timing])
 	word_indices = [frequent_words.index(extractor.ps.stem(w)) for (_,w) in frequent_words_with_timing]
+	initial_guess = np.array([t for (t,_) in frequent_words_with_timing])
 	optimization_words = [w for (_,w) in frequent_words_with_timing]
 	opt_time = 0
+
+	# normalize predicted probabilities with prior knowledge about word frequency
+	prediction_vals = normalize_predictions(prediction_vals, word_indices)
+
+	# scale predicted probabilities to reduce uniformity
+	if not options.baseline and options.scale_predictions:
+		for i in range(interval_count):
+			threshold = np.mean(prediction_vals)+np.mean(np.std(prediction_vals, axis=1))
+			slope = 3
+			prediction_vals[i,:] = 1/(1+np.exp(-slope*(prediction_vals[i,:]-threshold)))
 
 	cobyla_limit = 1500
 	slsqp_limit = 4000
