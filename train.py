@@ -3,6 +3,7 @@ import models.conv_lstm_model
 import models.experimental_model
 import models.deep_conv_model
 import models.big_deep_conv_model
+import models.conv_deep_nn
 import numpy as np
 import json
 import os.path
@@ -55,6 +56,8 @@ if __name__ == "__main__":
 		model = models.deep_conv_model.Model()
 	elif config["model"] == "big_deep_conv":
 		model = models.big_deep_conv_model.Model()
+	elif config["model"] == "conv_deep_nn":
+		model = models.conv_deep_nn.Model()
 	else: # if config["model"] == "experimental"
 		model = models.model.Model()
 	predictions, keep_prob = model.train_model(input_3d)
