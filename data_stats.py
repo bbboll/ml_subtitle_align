@@ -72,16 +72,6 @@ def count_words(text):
 
 if __name__ == '__main__':
 
-	phonemes = nltk.corpus.cmudict.dict()
-	print(len(phonemes))
-	count = 0
-	for p in phonemes.items():
-		if count > 10:
-			break
-		print(p)
-		count += 1
-	exit()
-
 	for t in AllTalks():
 		total_duration += t.duration / 60
 		count_words(t.transcript)
