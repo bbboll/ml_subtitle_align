@@ -1,23 +1,14 @@
-import models.conv_model
-import models.conv_lstm_model
-import models.experimental_model
-import models.deep_conv_model
-import models.big_deep_conv_model
-import models.conv_deep_nn
 import numpy as np
 import json
 import os.path
 from shutil import copyfile
 import tensorflow as tf
 import extract_training_data as extractor
-from training_routines import compute_full_vector_labels
-from training_routines import xbatches
-from training_routines import _get_full_path
-from training_routines import get_training_save_paths
+import training_routines
 
 if __name__ == "__main__":
 	tf.logging.set_verbosity(tf.logging.INFO)
-	model_load_checkpoint = None #_get_full_path("training_data", "run_2018-03-21-14_a3d133d1fb017e1980ae91f7c2345a2f", "train", "model.ckpt-11")
+	model_load_checkpoint = None #training_routines._get_full_path("training_data", "run_2018-03-21-14_a3d133d1fb017e1980ae91f7c2345a2f", "train", "model.ckpt-11")
 
     # change directory to ml_subtitle_align/ folder
 	# start Tensorboard with command:
@@ -28,11 +19,11 @@ if __name__ == "__main__":
 	#   http://127.0.0.1:6006
 
 	# load config
-	config_path = _get_full_path("training_config.json")
+	config_path = training_routines._get_full_path("training_config.json")
 	if not os.path.isfile(config_path):
 		copyfile(config_path+".default", config_path)
 	config = json.load(open(config_path))
-	hardware_config_path = _get_full_path("hardware_config.json")
+	hardware_config_path = training_routines._get_full_path("hardware_config.json")
 	if not os.path.isfile(hardware_config_path):
 		copyfile(hardware_config_path+".default", hardware_config_path)
 
@@ -46,20 +37,7 @@ if __name__ == "__main__":
 	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 
 	# instantiate model
-	if config["model"] == "simple_conv":
-		model = models.conv_model.Model()
-	elif config["model"] == "dense_conv":
-		model = models.conv_model.Model(hyperparams=["dense"])
-	elif config["model"] == "conv_lstm":
-		model = models.conv_lstm_model.Model()
-	elif config["model"] == "deep_conv":
-		model = models.deep_conv_model.Model()
-	elif config["model"] == "big_deep_conv":
-		model = models.big_deep_conv_model.Model()
-	elif config["model"] == "conv_deep_nn":
-		model = models.conv_deep_nn.Model()
-	else: # if config["model"] == "experimental"
-		model = models.model.Model()
+	model = training_routines.get_model_obj_from_config(config)
 	predictions, keep_prob = model.train_model(input_3d)
 
 	#
@@ -157,7 +135,7 @@ if __name__ == "__main__":
 
 	# Merge all the summaries and write them out to /training_data/run_[...]_[...]/retrain_logs
 	merged_summaries = tf.summary.merge_all()
-	training_data_path, retrain_logs_path, train_path = get_training_save_paths(config)
+	training_data_path, retrain_logs_path, train_path = training_routines.get_training_save_paths(config)
 	train_writer = tf.summary.FileWriter(os.path.join(retrain_logs_path, "train"), sess.graph)
 	validation_writer = tf.summary.FileWriter(os.path.join(retrain_logs_path, "validation"))
 
@@ -202,7 +180,7 @@ if __name__ == "__main__":
 		#
 		# 	--- training inner loop ---
 		#
-		for batch_ii, (train_input, train_ground_truth) in enumerate(xbatches(batch_size, training=True, full=(not config["loss_function"] == "softmax_cross_entropy"))):
+		for batch_ii, (train_input, train_ground_truth) in enumerate(training_routines.xbatches(batch_size, training=True, full=(not config["loss_function"] == "softmax_cross_entropy"))):
 			train_summary, loss_value, _, _ = sess.run(
 				[merged_summaries, loss, train_step, increment_global_step],
 				feed_dict={
@@ -227,7 +205,7 @@ if __name__ == "__main__":
 		total_loss = 0
 		validation_batches = 0
 		total_cf_matrix = None
-		for batch_ii, (val_input, val_ground_truth) in enumerate(xbatches(batch_size, training=False, full=(not config["loss_function"] == "softmax_cross_entropy"))):
+		for batch_ii, (val_input, val_ground_truth) in enumerate(training_routines.xbatches(batch_size, training=False, full=(not config["loss_function"] == "softmax_cross_entropy"))):
 			val_summary, val_loss = sess.run(
 				[merged_summaries, loss],
 				feed_dict={

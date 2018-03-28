@@ -1,0 +1,6 @@
+model_checkpoint_path: "D:\\Bastian\\ml_subtitle_align\\training_data\\run_2018-03-27-14_7c5fe444f4cbd75b2381f00f787708ef\\train\\model.ckpt-6"
+all_model_checkpoint_paths: "D:\\Bastian\\ml_subtitle_align\\training_data\\run_2018-03-27-14_7c5fe444f4cbd75b2381f00f787708ef\\train\\model.ckpt-45"
+all_model_checkpoint_paths: "D:\\Bastian\\ml_subtitle_align\\training_data\\run_2018-03-27-14_7c5fe444f4cbd75b2381f00f787708ef\\train\\model.ckpt-46"
+all_model_checkpoint_paths: "D:\\Bastian\\ml_subtitle_align\\training_data\\run_2018-03-27-14_7c5fe444f4cbd75b2381f00f787708ef\\train\\model.ckpt-47"
+all_model_checkpoint_paths: "D:\\Bastian\\ml_subtitle_align\\training_data\\run_2018-03-27-14_7c5fe444f4cbd75b2381f00f787708ef\\train\\model.ckpt-48"
+all_model_checkpoint_paths: "D:\\Bastian\\ml_subtitle_align\\training_data\\run_2018-03-27-14_7c5fe444f4cbd75b2381f00f787708ef\\train\\model.ckpt-6"

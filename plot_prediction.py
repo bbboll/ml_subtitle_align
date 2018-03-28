@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import argparse
 from preprocessing.talk import Talk
-from training_routines import get_model_from_run
-from training_routines import compute_full_vector_labels
+import training_routines
 import json
 import os.path
 import extract_training_data as extractor
@@ -27,24 +26,10 @@ sess = tf.InteractiveSession()
 input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
 
 # load model
-model_load_checkpoint, training_config = get_model_from_run(options.run)
-if training_config["model"] == "simple_conv":
-	from models.conv_model import Model
-elif training_config["model"] == "dense_conv":
-	from models.conv_model import Model
-elif training_config["model"] == "conv_lstm":
-	from models.conv_lstm_model import Model
-elif training_config["model"] == "deep_conv":
-	from models.deep_conv_model import Model
-elif training_config["model"] == "big_deep_conv":
-	from models.big_deep_conv_model import Model
-elif training_config["model"] == "conv_deep_nn":
-	from models.conv_deep_nn import Model
-if training_config["model"] == "dense_conv":
-	model = Model(hyperparams=["dense"])
-else:
-	model = Model()
+model_load_checkpoint, training_config = training_routines.get_model_from_run(options.run)
+model = training_routines.get_model_obj_from_config(training_config)
 prediction = model.test_model(input_3d)
+
 print("Loading model from checkpoint {}".format(model_load_checkpoint))
 model.load_variables_from_checkpoint(sess, model_load_checkpoint)
 
@@ -76,7 +61,7 @@ while mfcc_features.shape[0] > 0:
 # release gpu resources
 sess.close()
 
-true_labels = compute_full_vector_labels(talk, interval_count)
+true_labels = training_routines.compute_full_vector_labels(talk, interval_count)
 
 #y = np.sum(prediction_vals, axis=1)
 word_ind = frequent_words.index("we")
