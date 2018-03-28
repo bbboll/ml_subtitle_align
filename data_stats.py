@@ -47,11 +47,14 @@ def explore_counts():
 		print("{} words appear at least {} times.".format(len(frequent_words), count+1))
 		print("They cover {0:.2f} of the text.".format(fraction))
 
-nltk.download('punkt')
 
 total_duration = 0
 words = {}
 
+try:
+	nltk.data.find('tokenizers/punkt')
+except LookupError:
+	nltk.download('punkt')
 ps = nltk.stem.PorterStemmer()
 
 def count_words(text):
@@ -68,6 +71,17 @@ def count_words(text):
 			words[stem] += 1
 
 if __name__ == '__main__':
+
+	phonemes = nltk.corpus.cmudict.dict()
+	print(len(phonemes))
+	count = 0
+	for p in phonemes.items():
+		if count > 10:
+			break
+		print(p)
+		count += 1
+	exit()
+
 	for t in AllTalks():
 		total_duration += t.duration / 60
 		count_words(t.transcript)

@@ -21,7 +21,10 @@ frequent_words_path = _path("data/training/frequent_words.json")
 all_words_path = _path("data/talks/counts.json")
 word_timings_path = _path("data/training/word_timings.json")
 
-# nltk.download('punkt')
+try:
+	nltk.data.find('tokenizers/punkt')
+except LookupError:
+	nltk.download('punkt')
 ps = nltk.stem.PorterStemmer()
 
 def compute_most_frequent_words():
