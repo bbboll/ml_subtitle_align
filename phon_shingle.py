@@ -9,6 +9,10 @@ def _path(relpath):
 	return os.path.abspath(os.path.join(current_dir, relpath))
 
 if __name__ == '__main__':
+	"""
+	Transcribe all frequent words in the dataset into a phonetic representation. Compute shingles from the phones and save them
+	to a file.
+	"""
 	if not os.path.isfile(_path("data/training/frequent_full_word_phonetics.json")) or not os.path.isfile(_path("data/training/frequent_full_words.json")):
 		print("Please execute data_phonetic_stats.py first.")
 		exit()
