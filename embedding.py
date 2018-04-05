@@ -2,6 +2,7 @@ import json
 import os.path
 import numpy as np
 import absolute_path
+from scipy.optimize import fmin_bfgs
 
 EMBEDDING_DIMENSION = 45
 
@@ -13,7 +14,10 @@ def cosine_sim(x, y, normalize=True):
 	If normalize is set to True, the result is linearly transformed into [0,1] for better
 	comparability to the jaccard similarity.
 	"""
-	cosine = np.dot(x,y) / (np.linalg.norm(x)*np.linalg.norm(y))
+	norms = np.linalg.norm(x)*np.linalg.norm(y)
+	if norms == 0:
+		return 0
+	cosine = np.dot(x,y) / norms
 	if normalize:
 		return 0.5*cosine + 0.5
 	return cosine
@@ -41,13 +45,24 @@ def jaccard(x, y):
 def enumerate_square(i, n):
 	"""
 	Given i in the range(n^2-n) compute a bijective mapping
-	range(n^2-n) -> (n-1)^2 
+	range(n^2-n) -> range(n)*range(n-1) 
 	"""
 	row = int(i // (n-1))
 	col = int(i % (n-1))
 	if col >= row:
 		col += 1
 	return row, col
+
+def embedding_cost_function(x_flat, pairwise_jaccard, n):
+	cost = 0
+	for i in range(n**2 - n):
+		x_ind, y_ind = enumerate_square(i, n)
+		emb_sim = cosine_sim(
+					x_flat.reshape((n, EMBEDDING_DIMENSION))[x_ind],
+					x_flat.reshape((n, EMBEDDING_DIMENSION))[y_ind]
+				)
+		cost += (emb_sim - pairwise_jaccard[i])**2
+	return cost + (np.linalg.norm(x_flat)-1)**2
 
 if __name__ == '__main__':
 	"""
@@ -73,3 +88,17 @@ if __name__ == '__main__':
 					jacc_sim = max(jacc_sim, jaccard(x, y))
 			pairwise_jaccard.append(jacc_sim)
 		np.save(pairwise_jaccard_path, np.array(pairwise_jaccard))
+
+	print("start")
+	print(embedding_cost_function(np.ones(n*EMBEDDING_DIMENSION), pairwise_jaccard, n))
+	exit()
+
+	# compute word embedding
+	emb = np.zeros(n*EMBEDDING_DIMENSION)
+	emb, fopt = fmin_bfgs(
+		embedding_cost_function,
+		emb,
+		args = (pairwise_jaccard, n),
+		maxiter = 1
+	)
+	print("Achieved optimal value: {}".format(fopt))
