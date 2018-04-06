@@ -2,9 +2,9 @@ import json
 import os.path
 import numpy as np
 import absolute_path
-from scipy.optimize import fmin_bfgs
 
-EMBEDDING_DIMENSION = 45
+EMBEDDING_DIMENSION = 25
+BATCH_SIZE = int(1e4)
 
 def cosine_sim(x, y, normalize=True):
 	"""
@@ -54,15 +54,42 @@ def enumerate_square(i, n):
 	return row, col
 
 def embedding_cost_function(x_flat, pairwise_jaccard, n):
+	"""
+	Compute a stochastic approximation to the cost function value.
+	"""
 	cost = 0
-	for i in range(n**2 - n):
+	regularization = 0
+	for i in np.random.randint(0, n**2-n, size=BATCH_SIZE): # range(n**2 - n):
 		x_ind, y_ind = enumerate_square(i, n)
 		emb_sim = cosine_sim(
 					x_flat.reshape((n, EMBEDDING_DIMENSION))[x_ind],
 					x_flat.reshape((n, EMBEDDING_DIMENSION))[y_ind]
 				)
 		cost += (emb_sim - pairwise_jaccard[i])**2
-	return cost + (np.linalg.norm(x_flat)-1)**2
+		regularization += (np.linalg.norm(x_flat.reshape((n, EMBEDDING_DIMENSION))[x_ind])-1)**2
+		regularization += (np.linalg.norm(x_flat.reshape((n, EMBEDDING_DIMENSION))[y_ind])-1)**2
+	return cost/BATCH_SIZE + regularization/(2*BATCH_SIZE)
+
+def embedding_cost_gradient(x_flat, pairwise_jaccard, n):
+	"""
+	Compute a stochastic approximation of the cost function gradient.
+	"""
+	grad = np.zeros((len(x_flat),))
+	for i in np.random.randint(0, n**2-n, size=BATCH_SIZE):
+		k, j = enumerate_square(i, n)
+		xj = x_flat.reshape((n, EMBEDDING_DIMENSION))[j]
+		xk = x_flat.reshape((n, EMBEDDING_DIMENSION))[k]
+		comp_norm = np.linalg.norm(xk)
+		norms = comp_norm*np.linalg.norm(xj)
+		a = k*EMBEDDING_DIMENSION
+		b = a + EMBEDDING_DIMENSION
+		if norms == 0:
+			grad[a:b] += np.ones(EMBEDDING_DIMENSION)
+			continue
+		grad[a:b] += 4*(xj.dot(xk)/norms - pairwise_jaccard[i])/norms * xj
+		grad[a:b] += 2*(1-1/comp_norm) * xk
+	return grad / BATCH_SIZE
+
 
 if __name__ == '__main__':
 	"""
@@ -89,16 +116,19 @@ if __name__ == '__main__':
 			pairwise_jaccard.append(jacc_sim)
 		np.save(pairwise_jaccard_path, np.array(pairwise_jaccard))
 
-	print("start")
-	print(embedding_cost_function(np.ones(n*EMBEDDING_DIMENSION), pairwise_jaccard, n))
-	exit()
-
 	# compute word embedding
-	emb = np.zeros(n*EMBEDDING_DIMENSION)
-	emb, fopt = fmin_bfgs(
-		embedding_cost_function,
-		emb,
-		args = (pairwise_jaccard, n),
-		maxiter = 1
-	)
-	print("Achieved optimal value: {}".format(fopt))
+	emb_path = absolute_path._get_full_path("data", "training", "word_embedding_{}.npy".format(EMBEDDING_DIMENSION))
+	if os.path.isfile(emb_path):
+		emb = np.load(emb_path).reshape(n*EMBEDDING_DIMENSION,)
+	else:
+		emb = np.zeros(n*EMBEDDING_DIMENSION)
+
+	# ITERATION_LIMIT = int(1e4)
+	# rate = 0.01
+	# for iter_ind in range(ITERATION_LIMIT):
+	# 	emb -= rate*embedding_cost_gradient(emb, pairwise_jaccard, n)
+	# 	if iter_ind % 100 == 0:
+	# 		print("Iteration {}".format(iter_ind))
+	print("Reached (stochastic) gradient norm {}".format(np.linalg.norm(embedding_cost_gradient(emb, pairwise_jaccard, n))))
+	print("Achieved (stochastic) optimal value: {}".format(embedding_cost_function(emb, pairwise_jaccard, n)))
+	np.save(emb_path, emb.reshape((n, EMBEDDING_DIMENSION)))
