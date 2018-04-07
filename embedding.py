@@ -3,7 +3,7 @@ import os.path
 import numpy as np
 import absolute_path
 
-EMBEDDING_DIMENSION = 25
+EMBEDDING_DIMENSION = 15
 BATCH_SIZE = int(1e4)
 
 def cosine_sim(x, y, normalize=True):
@@ -84,9 +84,9 @@ def embedding_cost_gradient(x_flat, pairwise_jaccard, n):
 		a = k*EMBEDDING_DIMENSION
 		b = a + EMBEDDING_DIMENSION
 		if norms == 0:
-			grad[a:b] += np.ones(EMBEDDING_DIMENSION)
+			grad[a:b] += np.random.rand(EMBEDDING_DIMENSION)*2-1
 			continue
-		grad[a:b] += 4*(xj.dot(xk)/norms - pairwise_jaccard[i])/norms * xj
+		grad[a:b] += 2*(cosine_sim(xj, xk) - pairwise_jaccard[i])/norms * xj
 		grad[a:b] += 2*(1-1/comp_norm) * xk
 	return grad / BATCH_SIZE
 
@@ -121,14 +121,14 @@ if __name__ == '__main__':
 	if os.path.isfile(emb_path):
 		emb = np.load(emb_path).reshape(n*EMBEDDING_DIMENSION,)
 	else:
-		emb = np.zeros(n*EMBEDDING_DIMENSION)
+		emb = np.random.rand(n*EMBEDDING_DIMENSION)*2 - 1
 
-	# ITERATION_LIMIT = int(1e4)
-	# rate = 0.01
-	# for iter_ind in range(ITERATION_LIMIT):
-	# 	emb -= rate*embedding_cost_gradient(emb, pairwise_jaccard, n)
-	# 	if iter_ind % 100 == 0:
-	# 		print("Iteration {}".format(iter_ind))
+	ITERATION_LIMIT = int(3e4)
+	rate = 0.01
+	for iter_ind in range(ITERATION_LIMIT):
+		emb -= rate*embedding_cost_gradient(emb, pairwise_jaccard, n)
+		if iter_ind % 100 == 0:
+			print("Iteration {}".format(iter_ind))
 	print("Reached (stochastic) gradient norm {}".format(np.linalg.norm(embedding_cost_gradient(emb, pairwise_jaccard, n))))
 	print("Achieved (stochastic) optimal value: {}".format(embedding_cost_function(emb, pairwise_jaccard, n)))
 	np.save(emb_path, emb.reshape((n, EMBEDDING_DIMENSION)))
