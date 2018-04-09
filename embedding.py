@@ -5,29 +5,29 @@ import absolute_path
 
 BATCH_SIZE = int(1e4)
 
-def cosine_sim(x, y, normalize=True):
+def cosine_dist(x, y, normalize=True):
 	"""
-	Compute the cosine similarity of x and y.
+	Compute the cosine distance of x and y.
 	For vectors x and y, this is the cosine of the angle between them.
 	This gives a value between -1 (totally opposite) and 1 (completely equal direction)
 	If normalize is set to True, the result is linearly transformed into [0,1] for better
-	comparability to the jaccard similarity.
+	comparability to the jaccard distance.
 	"""
 	norms = np.linalg.norm(x)*np.linalg.norm(y)
 	if norms == 0:
 		return 0
 	cosine = np.dot(x,y) / norms
 	if normalize:
-		return 0.5*cosine + 0.5
-	return cosine
+		return 1 - 0.5*cosine + 0.5
+	return -cosine
 
 def jaccard(x, y):
 	"""
-	Compute the jaccard similarity of x and y.
+	Compute the jaccard distance of x and y.
 	For sets x and y, this is the ratio of their intersection cardinality
 	to their union cardinality
-	jacc(x,y) = #(x n y) / #(x u y)
-	This gives a value between 0 (totally different) and 1 (completely equal)
+	jacc(x,y) = 1 - #(x n y) / #(x u y)
+	This gives a value between 0 (completely equal) and 1 (totally different)
 	"""
 	intersection = []
 	union = []
@@ -39,7 +39,7 @@ def jaccard(x, y):
 	for yi in y:
 		if not yi in union:
 			union.append(yi)
-	return len(intersection) / len(union)
+	return 1 - len(intersection) / len(union)
 
 def enumerate_square(i, n):
 	"""
@@ -60,34 +60,51 @@ def embedding_cost_function(x_flat, pairwise_jaccard, n, dim):
 	regularization = 0
 	for i in np.random.randint(0, n**2-n, size=BATCH_SIZE): # range(n**2 - n):
 		x_ind, y_ind = enumerate_square(i, n)
-		emb_sim = cosine_sim(
-					x_flat.reshape((n, dim))[x_ind],
-					x_flat.reshape((n, dim))[y_ind]
-				)
+		emb_sim = np.linalg.norm(x_flat.reshape((n, dim))[x_ind]-x_flat.reshape((n, dim))[y_ind])
+		# emb_sim = cosine_dist(
+		# 			x_flat.reshape((n, dim))[x_ind],
+		# 			x_flat.reshape((n, dim))[y_ind]
+		# 		)
 		cost += (emb_sim - pairwise_jaccard[i])**2
-		#regularization += (np.linalg.norm(x_flat.reshape((n, dim))[x_ind])-1)**2
-		#regularization += (np.linalg.norm(x_flat.reshape((n, dim))[y_ind])-1)**2
-	return cost/BATCH_SIZE + regularization/(2*BATCH_SIZE)
+	return cost/BATCH_SIZE # + regularization/(2*BATCH_SIZE)
 
-def embedding_cost_gradient(x_flat, pairwise_jaccard, n, dim):
+def embedding_cost_gradient(x_flat, pairwise_jaccard, pairwise_jaccard_ind, n, dim):
 	"""
 	Compute a stochastic approximation of the cost function gradient.
 	"""
 	grad = np.zeros((len(x_flat),))
-	for i in np.random.randint(0, n**2-n, size=BATCH_SIZE):
+	#for i in np.random.randint(0, n**2-n, size=BATCH_SIZE):
+	ratio_count = int(0.1*len(pairwise_jaccard))
+	for i in np.random.choice(pairwise_jaccard_ind, BATCH_SIZE):
 		k, j = enumerate_square(i, n)
 		xj = x_flat.reshape((n, dim))[j]
 		xk = x_flat.reshape((n, dim))[k]
-		comp_norm = np.linalg.norm(xk)
-		norms = comp_norm*np.linalg.norm(xj)
+		#comp_norm = np.linalg.norm(xk)
+		norms = np.linalg.norm(xk-xj)
+		#norms = comp_norm*np.linalg.norm(xj)
 		a = k*dim
 		b = a + dim
 		if norms == 0:
-			grad[a:b] += np.random.rand(dim)*2-1
+			grad[a:b] += np.random.random_sample(dim)*2-1
 			continue
-		grad[a:b] += 2*(cosine_sim(xj, xk) - pairwise_jaccard[i])/norms * xj
-		#grad[a:b] += 2*(1-1/comp_norm) * xk
-	return grad / BATCH_SIZE
+		grad[a:b] += 2*(norms - pairwise_jaccard[i])/norms * (xk-xj)
+		#grad[a:b] += -2*(cosine_dist(xj, xk) - pairwise_jaccard[i])/norms * xj
+
+	for i in np.random.choice(len(pairwise_jaccard), int(0.02*BATCH_SIZE)):
+		k, j = enumerate_square(i, n)
+		xj = x_flat.reshape((n, dim))[j]
+		xk = x_flat.reshape((n, dim))[k]
+		#comp_norm = np.linalg.norm(xk)
+		norms = np.linalg.norm(xk-xj)
+		#norms = comp_norm*np.linalg.norm(xj)
+		a = k*dim
+		b = a + dim
+		if norms == 0:
+			grad[a:b] += np.random.random_sample(dim)*2-1
+			continue
+		grad[a:b] += 2*(norms - pairwise_jaccard[i])/norms * (xk-xj)
+		#grad[a:b] += -2*(cosine_dist(xj, xk) - pairwise_jaccard[i])/norms * xj
+	return grad / (1.02*BATCH_SIZE)
 
 class Embedding(object):
 	"""
@@ -118,10 +135,11 @@ class Embedding(object):
 				jacc_sim = 0
 				for ind_x, x in enumerate(self.word_shingles[row]):
 					for y in self.word_shingles[col][ind_x:]:
-						jacc_sim = max(jacc_sim, jaccard(x, y))
+						jacc_sim = max(jacc_sim, 1-jaccard(x, y))
 				self.pairwise_jaccard.append(jacc_sim)
 			np.save(pairwise_jaccard_path, np.array(self.pairwise_jaccard))
-
+		self.pairwise_jaccard = 1-self.pairwise_jaccard
+		self.pairwise_jaccard[np.where(self.pairwise_jaccard >= 1)] += 2
 
 	def load_embedding(self):
 		"""
@@ -132,26 +150,39 @@ class Embedding(object):
 			self.embedding = np.load(emb_path)
 			return
 		else:
-			self.embedding = (np.random.rand(self.n*self.EMBEDDING_DIMENSION)*2 - 1).reshape((self.n, self.EMBEDDING_DIMENSION))
+			self.embedding = 5*(np.random.random_sample(self.n*self.EMBEDDING_DIMENSION)*2 - 1).reshape((self.n, self.EMBEDDING_DIMENSION))
 	
 	def optimize_embedding(self, step_limit = int(3e4)):
 		"""
 		"""
 		rate = 0.01
 		self.embedding = self.embedding.reshape((self.n*self.EMBEDDING_DIMENSION,))
+		pairwise_jaccard_ind = np.array(np.where(self.pairwise_jaccard < 1)).flatten()
 		for iter_ind in range(step_limit):
-			self.embedding -= rate*embedding_cost_gradient(self.embedding, self.pairwise_jaccard, self.n, self.EMBEDDING_DIMENSION)
+			self.embedding -= rate*embedding_cost_gradient(self.embedding, self.pairwise_jaccard, pairwise_jaccard_ind, self.n, self.EMBEDDING_DIMENSION)
 			if iter_ind % 100 == 0:
 				print("Iteration {}".format(iter_ind))
-		print("Reached (stochastic) gradient norm {}".format(np.linalg.norm(embedding_cost_gradient(self.embedding, self.pairwise_jaccard, self.n, self.EMBEDDING_DIMENSION))))
+		print("Reached (stochastic) gradient norm {}".format(np.linalg.norm(embedding_cost_gradient(self.embedding, self.pairwise_jaccard, pairwise_jaccard_ind, self.n, self.EMBEDDING_DIMENSION))))
 		print("Achieved (stochastic) optimal value: {}".format(embedding_cost_function(self.embedding, self.pairwise_jaccard, self.n, self.EMBEDDING_DIMENSION)))
 		self.embedding = self.embedding.reshape((self.n, self.EMBEDDING_DIMENSION))
 		emb_path = absolute_path._get_full_path("data", "training", "word_embedding_{}.npy".format(self.EMBEDDING_DIMENSION))
 		np.save(emb_path, self.embedding)
 
+	def get_closest_words(self, vec, limit=10):
+		"""
+		"""
+		#distances = [cosine_dist(x, vec) for x in self.embedding]
+		distances = [np.linalg.norm(x - vec) for x in self.embedding]
+		closest = []
+		for _ in range(limit):
+			i = np.argmin(distances)
+			closest.append((i, distances[i]))
+			distances[i] = np.inf
+		return closest
+
 
 if __name__ == '__main__':
 	"""
 	"""
-	emb = Embedding(15)
+	emb = Embedding(45)
 	emb.optimize_embedding(step_limit=int(1e4))

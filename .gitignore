@@ -6,10 +6,14 @@
 *.wav
 *.aac
 *.npy
+data/training/word_timings.json
 
 # local training configs
 training_config.json
 hardware_config.json
+
+# training runs
+training_data/run*
 
 # Python cache
 __pycache__/
@@ -59,5 +63,5 @@ doc/*.pdf
 !data/audio_features/2696.npy
 
 # don't ignore pretrained training configs
-!training_data/*/training_config.json
-!training_data/*/hardware_config.json
+#!training_data/*/training_config.json
+#!training_data/*/hardware_config.json
