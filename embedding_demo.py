@@ -4,7 +4,7 @@ from absolute_path import _get_full_path
 
 shingles = json.load(open(_get_full_path("data", "training", "word_shingles.json")))
 words = json.load(open(_get_full_path("data", "training", "frequent_full_words.json")))
-emb = embedding.Embedding(15)
+emb = embedding.Embedding(45)
 
 def demo(i):
 	vec = emb.embedding[i]

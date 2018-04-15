@@ -5,12 +5,13 @@ from shutil import copyfile
 import tensorflow as tf
 import extract_training_data as extractor
 import training_routines
+import training_data_provider
 
 if __name__ == "__main__":
 	tf.logging.set_verbosity(tf.logging.INFO)
 	model_load_checkpoint = None #training_routines._get_full_path("training_data", "run_2018-03-21-14_a3d133d1fb017e1980ae91f7c2345a2f", "train", "model.ckpt-11")
 
-    # change directory to ml_subtitle_align/ folder
+	# change directory to ml_subtitle_align/ folder
 	# start Tensorboard with command:
 	#   tensorboard --logdir model/retrain_logs/
 	# or:
@@ -33,8 +34,11 @@ if __name__ == "__main__":
 	# start a new tensorflow session
 	sess = tf.InteractiveSession()
 
+	# setup data provider for training
+	data_provider = training_data_provider.DataProvider(config)
+
 	# setup input shape
-	input_3d = tf.placeholder(tf.float32, [None, 80, 13], name="input_3d")
+	input_3d = tf.placeholder(tf.float32, [None, data_provider.get_feature_count(), 13], name="input_3d")
 
 	# instantiate model
 	model = training_routines.get_model_obj_from_config(config)
@@ -43,62 +47,65 @@ if __name__ == "__main__":
 	#
 	# 	--- define loss ---
 	#
-	ground_truth_input = tf.placeholder(tf.float32, [batch_size, 1500], name="ground_truth_input")
+	if config["data"] == "interval_sequence":
+		ground_truth_input = tf.placeholder(tf.float32, [batch_size, 2*training_data_provider.word_embedding.EMBEDDING_DIMENSION], name="ground_truth_input")
+	else:
+		ground_truth_input = tf.placeholder(tf.float32, [batch_size, 1500], name="ground_truth_input")
 	with tf.name_scope("loss"):
-		if config["loss_function"] == "logsumexp":
+		if config["loss"]["function"] == "logsumexp":
 			# this is a smooth approximation to the maximum function
 			loss = tf.reduce_logsumexp(tf.abs(tf.subtract(ground_truth_input, predictions)))
-		elif config["loss_function"] == "reg_logsumexp":
+		elif config["loss"]["function"] == "reg_logsumexp":
 			loss = tf.add(
 						tf.reduce_logsumexp(tf.abs(tf.subtract(ground_truth_input, predictions))), 
 						tf.reduce_mean(tf.multiply(tf.abs(predictions), 4e3))
 					)
-		elif config["loss_function"] == "reg_max":
+		elif config["loss"]["function"] == "reg_max":
 			loss = tf.add(
 						tf.reduce_max(tf.abs(tf.subtract(ground_truth_input, predictions))), 
 						tf.reduce_mean(tf.multiply(tf.abs(predictions), 4e2))
 					)
-		elif config["loss_function"] == "power_max":
+		elif config["loss"]["function"] == "power_max":
 			loss = tf.reduce_mean(tf.reduce_max(tf.abs(
 									tf.subtract(tf.pow(ground_truth_input, 4), tf.pow(predictions, 4))
 								), axis=1)
 							)
-		elif config["loss_function"] == "power_mean":
+		elif config["loss"]["function"] == "power_mean":
 			loss = tf.reduce_mean(tf.pow(tf.subtract(ground_truth_input, predictions), 4))
-		elif config["loss_function"] == "softmax":
+		elif config["loss"]["function"] == "softmax":
 			loss = tf.losses.softmax_cross_entropy(
 							onehot_labels=tf.one_hot(tf.argmax(ground_truth_input, axis=1), depth=1500),
 							logits=predictions
 						)
-		elif config["loss_function"] == "reg_hit_top":
+		elif config["loss"]["function"] == "reg_hit_top":
 			top_truth_mask = tf.one_hot(tf.argmax(ground_truth_input, axis=1), on_value=True, off_value=False, dtype=bool, depth=1500)
 			loss = tf.reduce_mean(tf.add(
 					tf.squared_difference(
 							tf.boolean_mask(predictions, top_truth_mask),
 							tf.reduce_max(ground_truth_input, axis=1)
 						),
-					tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss_hyperparam"])
+					tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss"]["hyperparam"])
 				))
-		elif config["loss_function"] == "reg_span_mse":
+		elif config["loss"]["function"] == "reg_span_mse":
 			# this turns out to be a very bad idea in practice
 			# the model just picks a random word, sets it to 100% probability and chooses 0% probability for every other word
 			loss = tf.subtract(
-						tf.reduce_mean(tf.multiply(tf.squared_difference(predictions, ground_truth_input), config["loss_hyperparam"])),
+						tf.reduce_mean(tf.multiply(tf.squared_difference(predictions, ground_truth_input), config["loss"]["hyperparam"])),
 						tf.reduce_mean(tf.squared_difference(
 								tf.reduce_max(predictions, axis=1),
 								tf.reduce_mean(predictions, axis=1)
 							))
 					)
-		elif config["loss_function"] == "sigmoid_cross_entropy":
+		elif config["loss"]["function"] == "sigmoid_cross_entropy":
 			loss = tf.losses.sigmoid_cross_entropy(
 						ground_truth_input, 
 						predictions
 					)
 			#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = ground_truth_input, logits = predictions))
-		elif config["loss_function"] == "reg_hit_top_soft":
+		elif config["loss"]["function"] == "reg_hit_top_soft":
 			# 
 			loss = tf.subtract(
-					tf.reduce_mean(tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss_hyperparam"])),
+					tf.reduce_mean(tf.multiply(tf.reduce_mean(predictions, axis=1), config["loss"]["hyperparam"])),
 					tf.divide(tf.trace(tf.matmul(
 						predictions,
 						ground_truth_input,
@@ -106,7 +113,43 @@ if __name__ == "__main__":
 						b_is_sparse = True
 					)), 1500)
 				)
-		else: # if config["loss_function"] == "mean_squared_error":
+		elif config["loss"]["function"] == "interval_sequence":
+			# the model will predict a sequence of 8 words for the current interval
+			# but we only have 2 words as a label
+			# choose the minimum squared distance between the label and all predicted 2-shingles
+			# the loss is the mean of these minimums for the current batch
+			word_embedding = training_data_provider.word_embedding
+			sq_diffs_0 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(0*word_embedding.EMBEDDING_DIMENSION):(2*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs_1 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(1*word_embedding.EMBEDDING_DIMENSION):(3*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs_2 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(2*word_embedding.EMBEDDING_DIMENSION):(4*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs_3 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(3*word_embedding.EMBEDDING_DIMENSION):(5*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs_4 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(4*word_embedding.EMBEDDING_DIMENSION):(6*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs_5 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(5*word_embedding.EMBEDDING_DIMENSION):(7*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs_6 = tf.reduce_mean(tf.squared_difference(
+							predictions[:,(6*word_embedding.EMBEDDING_DIMENSION):(8*word_embedding.EMBEDDING_DIMENSION)],
+							ground_truth_input
+						), axis=1)
+			sq_diffs = tf.stack([sq_diffs_0, sq_diffs_1, sq_diffs_2, sq_diffs_3, sq_diffs_4, sq_diffs_5, sq_diffs_6], axis=1)
+			loss = tf.reduce_mean(tf.reduce_min(sq_diffs, axis=1))
+		else: # if config["loss"]["function"] == "mean_squared_error":
 			loss = tf.losses.mean_squared_error(
 				labels=ground_truth_input,
 				predictions=predictions
@@ -180,7 +223,7 @@ if __name__ == "__main__":
 		#
 		# 	--- training inner loop ---
 		#
-		for batch_ii, (train_input, train_ground_truth) in enumerate(training_routines.xbatches(batch_size, training=True, full=(not config["loss_function"] == "softmax_cross_entropy"))):
+		for batch_ii, (train_input, train_ground_truth) in enumerate(data_provider.xbatches(training=True)):
 			train_summary, loss_value, _, _ = sess.run(
 				[merged_summaries, loss, train_step, increment_global_step],
 				feed_dict={
@@ -205,7 +248,7 @@ if __name__ == "__main__":
 		total_loss = 0
 		validation_batches = 0
 		total_cf_matrix = None
-		for batch_ii, (val_input, val_ground_truth) in enumerate(training_routines.xbatches(batch_size, training=False, full=(not config["loss_function"] == "softmax_cross_entropy"))):
+		for batch_ii, (val_input, val_ground_truth) in enumerate(data_provider.xbatches(training=False)):
 			val_summary, val_loss = sess.run(
 				[merged_summaries, loss],
 				feed_dict={

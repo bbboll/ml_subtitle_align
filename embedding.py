@@ -3,7 +3,7 @@ import os.path
 import numpy as np
 import absolute_path
 
-BATCH_SIZE = int(1e4)
+BATCH_SIZE = int(3e4)
 
 def cosine_dist(x, y, normalize=True):
 	"""
@@ -117,9 +117,14 @@ class Embedding(object):
 		super(Embedding, self).__init__()
 		self.EMBEDDING_DIMENSION = dim
 		self.word_shingles = json.load(open(absolute_path._get_full_path("data", "training", "word_shingles.json")))
+		self.words = json.load(open(absolute_path._get_full_path("data", "training", "frequent_full_words.json")))
 		self.n = len(self.word_shingles)
 		self.load_pairwise_jaccard_distances()
 		self.load_embedding()
+
+	def embed(self, word):
+		word_ind = self.words.index(word)
+		return self.embedding[word_ind]
 
 	def load_pairwise_jaccard_distances(self):
 		"""
@@ -184,5 +189,5 @@ class Embedding(object):
 if __name__ == '__main__':
 	"""
 	"""
-	emb = Embedding(45)
-	emb.optimize_embedding(step_limit=int(1e4))
+	emb = Embedding(15)
+	emb.optimize_embedding(step_limit=int(5e4))

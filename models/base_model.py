@@ -2,6 +2,7 @@ import numpy as np
 import os.path
 import tensorflow as tf
 
+
 def _get_full_path(*rel_path):
 	"""Make absolute path to a file or directory in the project folder ml_subtitle_align.
 
@@ -16,7 +17,8 @@ def _get_full_path(*rel_path):
 	path = os.path.dirname(path) # `.../ml_subtitle_align/`
 	return os.path.join(path, *rel_path)
 
-OUTPUT_DIM = 1500
+EMBEDDING_DIM = 15
+OUTPUT_DIM = 8*EMBEDDING_DIM # 1500 
 
 class BaseModel(object):
 	"""
