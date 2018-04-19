@@ -126,6 +126,9 @@ class Embedding(object):
 		word_ind = self.words.index(word)
 		return self.embedding[word_ind]
 
+	def get_index(self, word):
+		return self.words.index(word)
+
 	def load_pairwise_jaccard_distances(self):
 		"""
 		"""

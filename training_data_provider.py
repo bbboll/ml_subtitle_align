@@ -57,14 +57,17 @@ def compute_multi_categorical_labels(talk, interval_count):
 		talk_labels[word_ind][interval_ind] = 1
 	return talk_labels.T
 
-def compute_interval_sequence_data(talk, mfcc_features):
+def compute_interval_sequence_data(talk, mfcc_features, categorical_labels = False):
 	"""
 	Look for suited 2-shingles of embedded words in the talk transcript
 	and batch them together with a larger interval of mfcc features
 	"""
 	feature_count = int(2*SEQUENCE_RADIUS // 0.005)
 	features = np.zeros((0, feature_count*13))
-	labels = np.zeros((0, 2*word_embedding.EMBEDDING_DIMENSION))
+	if not  categorical_labels:
+		labels = np.zeros((0, 2*word_embedding.EMBEDDING_DIMENSION))
+	else:
+		labels = np.zeros((0, 2))
 	for ((w1, t1), (w2, t2)) in zip(word_timings[str(talk.ID)][:-1], word_timings[str(talk.ID)][1:]):
 		if w1 in embedded_words and w2 in embedded_words:
 			if t2-t1 > 1:
@@ -78,7 +81,10 @@ def compute_interval_sequence_data(talk, mfcc_features):
 				# skip pair, if it is too close the the audio end
 				continue
 			features = np.concatenate((features, mfcc_features[mfcc_start_index:mfcc_end_index, :].reshape((1, feature_count*13))), axis=0)
-			labels = np.concatenate((labels, np.concatenate((word_embedding.embed(w1), word_embedding.embed(w2))).reshape((1, 2*word_embedding.EMBEDDING_DIMENSION))), axis=0)
+			if not categorical_labels:
+				labels = np.concatenate((labels, np.concatenate((word_embedding.embed(w1), word_embedding.embed(w2))).reshape((1, 2*word_embedding.EMBEDDING_DIMENSION))), axis=0)
+			else:
+				labels = np.concatenate((labels, np.array([word_embedding.get_index(w1), word_embedding.get_index(w2)]).reshape(1,2)), axis=0)
 	return features.reshape((features.shape[0], feature_count, 13)), labels
 
 
@@ -87,11 +93,12 @@ class DataProvider(object):
 	Provides training data batches (input + labels)
 	for a given training config. 
 	"""
-	def __init__(self, training_config):
+	def __init__(self, training_config, categorical_labels=False):
 		self.training_config = training_config
 		self.batch_size = training_config["batch_size"]
 		self.data_model =training_config["data"]
 		self.full = (not training_config["loss"]["function"] == "softmax_cross_entropy")
+		self.categorical_labels = categorical_labels
 
 	def get_feature_count(self):
 		if self.data_model == "interval_sequence":
@@ -106,7 +113,10 @@ class DataProvider(object):
 		train_ids, test_ids = train_test_split(all_ids, test_size=0.1, shuffle=False)
 		if self.data_model == "interval_sequence":
 			features = np.zeros((0, int(2*SEQUENCE_RADIUS // 0.005), 13))
-			labels = np.zeros((0, 2*word_embedding.EMBEDDING_DIMENSION))
+			if not self.categorical_labels:
+				labels = np.zeros((0, 2*word_embedding.EMBEDDING_DIMENSION))
+			else:
+				labels = np.zeros((0,2))
 		else:
 			features = np.zeros((0,mfcc_per_interval,13))
 			labels = np.zeros((0,1500))
@@ -128,7 +138,7 @@ class DataProvider(object):
 
 					if self.data_model == "interval_sequence":
 						# 
-						talk_features, talk_labels = compute_interval_sequence_data(talk, mfcc_features)
+						talk_features, talk_labels = compute_interval_sequence_data(talk, mfcc_features, categorical_labels = self.categorical_labels)
 						features = np.concatenate((features, talk_features), axis=0)
 						labels = np.concatenate((labels, talk_labels), axis=0)
 						
