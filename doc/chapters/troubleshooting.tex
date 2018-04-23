@@ -1,0 +1,24 @@
+\chapter{Troubleshooting}
+
+\textbf{by Bastian Boll} \\
+
+Unfortunately, the alignments obtained by our original approach are fairly underwhelming. They do improvem upon the initial guess, but the required computation time is relatively large and the alignments are not precise enough to generate subtitles without additional human help. Upon closer examination of the model predictions, especially seeing that predicted probabilities of single words over the time of a TED talk remain almost constant, we developed an alternative course of action. The underlying hypothesis of why the models seem to be unable to capture the structure of the data is twofold:
+\begin{enumerate}
+	\item It is challenging to construct a good loss function which allows for the inherent imprecision of our data. We describe an alternative approach to mitigate this problem in section \ref{seq:interval_seq}.
+	\item As previously alluded to, the (acoustic) structure of the labels is continuous, but the categorical labels we provided for training are discrete. This makes classification much more challenging because mistaking a word in the audio for an acoustically similar one is treated by cross entropy loss as if the predicted word and the label were completely dissimilar. This is addressed via a word embedding approach described in section \ref{seq:word_embedding}.
+\end{enumerate}
+With regard to acoustical structure, we need to use full words from the transcript for labels instead of word stems. A statistical survey of the dataset analogous to the one described in section \ref{sec:reduction_labels} leads to the decision to use at least about $7000$ distinct words.
+
+\section{Interval sequence prediction}
+\label{seq:interval_seq}
+
+\textbf{by Bastian Boll} \\
+We assume the error between the computed time $t_w$ for $w$ in the audio and the exact time $w$ to be normally distributed with zero mean. Empirically, the standard deviation of the respective error distribution may be as high as $0.8$ seconds. In order to select an interval which contains a given word in the transcript with high probability, we need to consider larger intervals with a size of $2.0$ seconds.\\
+
+
+
+\section{Word embedding}
+\label{seq:word_embedding}
+
+\textbf{by Bastian Boll} \\
+
