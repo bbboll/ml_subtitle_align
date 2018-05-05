@@ -22,7 +22,7 @@ This still allows for multiple guesses as to which word is most likely, but it i
 \chapter{Results}
 \label{results}
 
-\textbf{by Paul Warkentin} \\
+\textbf{by Bastian Boll} \\
 
 We use tensorflow for GPU accellerated training of our models. Final loss values for every combination of model an loss function are summarized in the following table.
 \FloatBarrier
@@ -59,6 +59,8 @@ In order to quantify the prediction result accuracy, we perform the optimization
 We can also observe, that some predictions lead the optimizer to reach local minima which are not the optimal time points. By construction, this should not occur for very good predictions, but an improvement is still achieved.\\
 Listening to the audio, we can see that the initial guess is already close to being sufficient for subtitle generation. The optimizer has a very slow asymptotic conververgence towards the real time points, even for perfect labels.
 
+% However, a high single digit percentage improvement over the initial guess (as measured by the squared distance outlined above) is sufficient for most scenarios.
+
 The following table outlines the results for optimization.
 
 \FloatBarrier
@@ -83,6 +85,8 @@ The following table outlines the results for optimization.
 	\caption{Percentage improvement over initial guess as measured by sum of squared differences to optimal time points.}
 \end{table}
 \FloatBarrier
+
+% The results show, that the sigmoid cross entropy loss function is best suited to optimize for this particular measure. We can also see that the achieved results do not seem to improve with convolutional network depth. The more shallow convolutional network is able to provide sufficient results for subtitle generation if trained with a sigmoid cross entropy loss function.
 
 
 
