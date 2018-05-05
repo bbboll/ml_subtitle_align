@@ -10,6 +10,7 @@ import models.conv_lstm_model
 import models.deep_conv_model
 import models.big_deep_conv_model
 import models.conv_deep_nn
+import models.deep_nn
 
 def _get_full_path(*rel_path):
 	"""Make absolute path to a file or directory in the project folder ml_subtitle_align.
@@ -60,5 +61,7 @@ def get_model_obj_from_config(training_config):
 		return models.big_deep_conv_model.Model()
 	elif training_config["model"] == "conv_deep_nn":
 		return models.conv_deep_nn.Model()
+	elif training_config["model"] == "deep_nn":
+		return models.deep_nn.Model()
 	else: # if training_config["model"] == "experimental"
 		return models.model.Model()

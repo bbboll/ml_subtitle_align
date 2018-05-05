@@ -223,7 +223,8 @@ if __name__ == "__main__":
 		#
 		# 	--- training inner loop ---
 		#
-		for batch_ii, (train_input, train_ground_truth) in enumerate(data_provider.xbatches(training=True)):
+		#for batch_ii, (train_input, train_ground_truth) in enumerate(data_provider.xbatches(training=True)):
+		for batch_ii, (train_input, train_ground_truth) in enumerate(data_provider.load_batches(training=True)):
 			train_summary, loss_value, _, _ = sess.run(
 				[merged_summaries, loss, train_step, increment_global_step],
 				feed_dict={
@@ -248,7 +249,8 @@ if __name__ == "__main__":
 		total_loss = 0
 		validation_batches = 0
 		total_cf_matrix = None
-		for batch_ii, (val_input, val_ground_truth) in enumerate(data_provider.xbatches(training=False)):
+		#for batch_ii, (val_input, val_ground_truth) in enumerate(data_provider.xbatches(training=False)):
+		for batch_ii, (val_input, val_ground_truth) in enumerate(data_provider.load_batches(training=False)):
 			val_summary, val_loss = sess.run(
 				[merged_summaries, loss],
 				feed_dict={

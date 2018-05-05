@@ -1,0 +1,43 @@
+\chapter{Discussion and Outlook}
+
+\textbf{by Bastian Boll} \\
+
+Unfortunately, the alignments obtained by our original approach are fairly underwhelming. They do improve upon the initial guess, but the required computation time is relatively large and the alignments are not precise enough to generate subtitles without additional human help. Upon closer examination of the model predictions one can especially see that predicted probabilities of single words over the time of a TED talk remain almost constant. Our hypothesis of why the models seem to be unable to capture the structure of the data is twofold:
+\begin{enumerate}
+	\item As previously alluded to, the (acoustic) structure of the labels is continuous, but the categorical labels we provided for training are discrete. This makes classification much more challenging because mistaking a word in the audio for an acoustically similar one is treated by cross entropy loss as if the predicted word and the label were completely dissimilar. This is addressed via a word embedding approach described in section \ref{seq:word_embedding}.
+	\item It is challenging to construct a good loss function which allows for the inherent imprecision of our data. We describe an alternative approach to mitigate this problem in section \ref{seq:interval_seq}.
+\end{enumerate}
+
+
+\section{Acoustic word embedding}
+\label{seq:word_embedding}
+
+\textbf{by Bastian Boll} \\
+
+With regard to acoustical structure, we need to use full words from the transcript as labels instead of word stems. A statistical survey of the dataset analogous to the one described in section \ref{sec:reduction_labels} leads to the decision to use at least about $7000$ distinct words.\\
+One can leverage available dictionary resources such as \href{https://github.com/cmusphinx/cmudict}{cmudict} through \href{https://www.nltk.org/}{nltk} in order to transcribe each word into a sequence of phonemes. To quantify the acoustic distance between two words, we can construct the sets of 2-shingles of the respective phoneme sequences and compute their Jaccard distance. This defines a distance metric on the set of words. To be able to leverage this distance metric computationally, we compute an embedding of the words into a Euclidean space such that the Euclidean distance corresponds to the above acoustical distance. This embedding process is a non-trivial optimization problem in a very high dimensional space. To make it computationally feasible, we construct a stochastic variant of the objective and iterate by stochastic gradient descent. The idea of  embedding structure into Euclidean spaces is well-known in the research community and has been used in adjacent problem settings \cite{silfverberg2018sound,goldberg2014word2vec,tang2014learning}.
+
+
+\section{Interval sequence prediction}
+\label{seq:interval_seq}
+
+\textbf{by Bastian Boll} \\
+We assume the error between the computed time $t_w$ for $w$ in the audio and the exact time $w$ to be normally distributed with zero mean. Empirically, the standard deviation of the respective error distribution may be as high as $0.8$ seconds. In order to select an interval which contains a given word in the transcript with high probability, we need to consider larger intervals.\\
+The model is now set up to predict a sequence of eight words for the MFCC features extracted from a $2.0$ second interval. From the middle of the interval, we take two consecutive words as label which should be part of the eight predicted words with high probability. As a loss function, we compute the minimal acoustic distance between two consecutive predicted words and the two label words.
+
+
+\section{Conclusion}
+
+\textbf{by Bastian Boll and Paul Warkentin} \\
+
+Our optimization setting has proven to be well-suited to tackle the alignment problem at hand. One can clearly see the positive effect of being able to leverage prior knowledge and prevent unwanted classification side effects such as possible confusion of word order.\\
+We have also seen speciallized loss function constructions being better geared towards this specific learning problem, yielding superior results on real-world data. However, the computed alignments still are not sufficient for generating e.g. movie subtitles because local deviations may be on the order of seconds.\\
+
+While we already outlined ways to improve prediction results in sections \ref{seq:word_embedding} and \ref{seq:interval_seq}, the gained structural improvements do not seem to fully overcome the difficulty presented by the coarsely labeled dataset.\\
+In order to leverage both the availability of coarsely labeled data and the ability to learn lower level features from data with greater time resolution, one could try to devise a weakly supervised approach. Similar endeavors have already shown to be effective for adjacent problem domains \cite{wei2017personalized, synnaeve2014weakly}. In fact, \cite{serriere2016weakly} even describes proceedings to address very similar alignment problems.
+
+% In summary, we could successfully tackle the problem of automatic subtitle alignment. The results depend on the class of neural network and the loss function that was used during the training process. In the end, the most difficult parts to implement were the nearly exact extraction of the timings of each spoken word as well as the optimization process and loss function considerations. \\
+
+% The latter still presents  opportunity for improvement, as the time required is very inconsistent and overall fairly large. The problem of the optimizer converging towards wrong local minima could also be addressed by a globalization strategy or by introducing a regularization term to make the computed distribution of words more uniform.\\
+
+% Mastering this type of problems with neural networks may also enable application of similar methods to adjacent problem domains such as indicating the progress of an orchestra playing a classical piece of music.

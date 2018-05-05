@@ -1,0 +1,29 @@
+\chapter{Introduction}
+\label{chap:intro}
+
+\textbf{by Bastian Boll} \\
+
+There is a constant need to generate subtitles for video. For large video quantities such as on sites like YouTube, machine learning systems have been employed to perform this task \cite{youtubeFAQ}. 
+
+In this work, we aim to solve a related problem: given an audio file $A$ and a finished transcript $\mathcal{T}$, we try to compute time alignment information. Let $\mathcal{T}$ be an $l$-tuple of words and $A$ be a spoken-word audio signal with known length such that every word $w$ in $\mathcal{T}$ occurs in $A$ at time $t_w$ . We try to find the mapping
+\begin{align*}
+	f&\colon\textrm{Transcripts}_l\to\R^l\\
+	\mathcal{T}&\mapsto f(\mathcal{T})\textrm{ such that }(f(\mathcal{T}))_w=t_w
+\end{align*}
+Because the transcript is given, this problem is easier to solve than general speech-to-text. Specifically, a respective model does not need to solve the tasks addressed by the language model which is typically present in a speech-to-text system \cite{anusuya2010speech}.
+
+However, a good solution for the above problem is still a useful tool in generating subtitles as the laborious process of aligning a transcript to the video could be automated.
+
+\section{The dataset}
+
+\textbf{by Bastian Boll} \\
+
+We use a dataset consisting of 2436 \href{https://www.ted.com}{TED-talks}. Part of the metadata for these talks can be found in \href{https://www.kaggle.com/rounakbanik/ted-talks}{a kaggle dataset}. Additional data, such as subtitles and audio files can be aquired from the TED website. Both the subtitles and the audio are permitted to be used for the described purpose by their \href{https://www.ted.com/about/our-organization/our-policies-terms/ted-talks-usage-policy}{usage policy and license}.\\
+The dataset contains approximately 560 hours of high quality English spoken audio recordings. Speakers come from a very diverse international pool. The used language is relatively erudite. Both subtitles and transcripts for each talk are of consistently good quality.\\
+This dataset was chosen to be representative of the type of data which can be cheaply acquired but still contains structural information with regard to the problem at hand. This specifically represents a tradeoff between data accuracy and available data quantity. Most acoustic modelling approaches do not predict words directly. Instead, sequences of phonemes or even sub-phonetic states (as in e.g. \cite{maas2015building}) are predicted from short intervals of an audio signal to be used in conjunction with a language model. Using much more coarsely labeled data from sources such as the one we chose prohibits the use of single phonemes or sub-phonetic states as labels. It is therefore to be expected that any model constructed to work with this data is presented with a fairly hard classification task. On the other hand, one can try and make up for this challenge by being able to source form an extremely large pool of available data. In chapter \ref{chap:algorithm} we also describe how pre-existing knowledge such as word order can be effectively employed to reduce the accuracy requirements for the language model.
+
+\section{Implementation}
+
+\textbf{by Bastian Boll} \\
+
+All presented methods are implemented in Python 3.6 making prevalent use of \href{https://www.tensorflow.org/}{Tensorflow 1.4} and \href{http://www.numpy.org/}{numpy}. The source code is available at \url{https://github.com/bbboll/ml_subtitle_align}. The \emph{Readme.md} provides additional information on how to get started.

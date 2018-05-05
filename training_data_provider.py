@@ -105,6 +105,45 @@ class DataProvider(object):
 			return int(2*SEQUENCE_RADIUS // 0.005)
 		return 80
 
+	def load_batches(self, training=True):
+		"""If available, batches can be loaded from generated numpy files
+		"""
+		i = 100
+		features = np.zeros((0, int(2*SEQUENCE_RADIUS // 0.005), 13))
+		if not self.categorical_labels:
+			labels = np.zeros((0, 2*word_embedding.EMBEDDING_DIMENSION))
+		else:
+			labels = np.zeros((0,2))
+
+		savepath = _get_full_path("data", "training", "categorical")
+		while (os.path.isfile(os.path.join(savepath, "training_features_{}.npy".format(i))) and training) or (not training and os.path.isfile(os.path.join(savepath, "test_features_{}.npy".format(i)))):
+			# load new (features, labels) from file
+			if training:
+				feature_filename = "training_features_{}.npy".format(i)
+				label_filename = "training_labels_{}.npy".format(i)
+			else:
+				feature_filename = "test_features_{}.npy".format(i)
+				label_filename = "test_labels_{}.npy".format(i)
+			features = np.concatenate((features, np.load(os.path.join(savepath, feature_filename))), axis=0)
+			if self.categorical_labels:
+				labels = np.concatenate((labels, np.load(os.path.join(savepath, label_filename))), axis=0)
+			else:
+				label_batch = np.load(os.path.join(savepath, label_filename))
+				for j in range(label_batch.shape[0]):
+					labels = np.concatenate((labels, np.array([word_embedding.embedding[int(label_batch[j,0])], word_embedding.embedding[int(label_batch[j,1])]]).reshape((1, 2*word_embedding.EMBEDDING_DIMENSION))), axis=0)
+			i += 100
+
+			# output loaded data
+			while labels.shape[0] > self.batch_size:
+				yield (
+					features[:self.batch_size],
+					labels[:self.batch_size]
+				)
+				features = features[self.batch_size:]
+				labels = labels[self.batch_size:]
+		return
+
+
 	def xbatches(self, training=True):
 		"""Batch MFCC data, labels together.
 		""" 

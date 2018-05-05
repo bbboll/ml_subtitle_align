@@ -7,6 +7,8 @@
 \input{\RootPath/imports}
 \input{\RootPath/settings}
 
+\addbibresource{\RootPath/resources.bib}
+
 \begin{document}
 
 % custom headings
@@ -21,15 +23,17 @@
 
 \input{\RootPath/title}
 \input{\RootPath/empty}
-\input{\RootPath/abstract}
+\input{\RootPath/chapters/abstract}
 \input{\RootPath/empty}
 \input{\RootPath/toc}
 \input{\RootPath/empty}
-\input{\RootPath/intro}
-\input{\RootPath/theory}
-\input{\RootPath/data_preparation}
-\input{\RootPath/algorithm_concept}
-\input{\RootPath/results}
-\input{\RootPath/conclusion}
+\input{\RootPath/chapters/intro}
+\input{\RootPath/chapters/theory}
+\input{\RootPath/chapters/data_preparation}
+\input{\RootPath/chapters/algorithm_concept}
+\input{\RootPath/chapters/results}
+\input{\RootPath/chapters/discussion}
+
+\printbibliography
 
 \end{document}
