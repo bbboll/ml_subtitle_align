@@ -161,9 +161,14 @@ if __name__ == '__main__':
 		prediction_vals = training_routines.compute_full_vector_labels(talk, interval_count)
 
 	# if the model outputs logits, we need to transform them to probabilities first
-	if training_config["loss_function"] in ["softmax", "sigmoid_cross_entropy"]:
-		odds = np.exp(prediction_vals)
-		prediction_vals = odds / (1 + odds)
+	if "loss_function" in training_config:
+		if training_config["loss_function"] in ["softmax", "sigmoid_cross_entropy"]:
+			odds = np.exp(prediction_vals)
+			prediction_vals = odds / (1 + odds)
+	else:
+		if training_config["loss"]["function"] in ["softmax", "sigmoid_cross_entropy"]:
+			odds = np.exp(prediction_vals)
+			prediction_vals = odds / (1 + odds)
 
 	print("Prediction for {} intervals was successful.".format(prediction_vals.shape[0]))
 
@@ -249,6 +254,16 @@ if __name__ == '__main__':
 	print("SSE initial guess to (true) data guess: {}".format(moved_sse))
 
 	if not options.baseline and not options.fake_optimal:
+		if "loss_function" in training_config:
+			loss_function = training_config["loss_function"]
+		else:
+			loss_function = training_config["loss"]["function"]
+		if loss_function == "reg_hit_top" and "loss_hyperparam" in training_config:
+			loss_hyperparam = training_config["loss_hyperparam"]
+		elif loss_function == "reg_hit_top" and "loss" in training_config:
+			loss_hyperparam = training_config["loss"]["hyperparam"]
+		else:
+			loss_hyperparam = 0
 		# save prediction summary
 		summary = [
 					[
@@ -268,8 +283,8 @@ if __name__ == '__main__':
 					[
 						training_config["model"], 
 						options.model_loss, 
-						training_config["loss_function"], 
-						(str(training_config["loss_hyperparam"]) if training_config["loss_function"] == "reg_hit_top" else "0"), 
+						loss_function, 
+						(str(loss_hyperparam) if loss_function == "reg_hit_top" else "0"), 
 						str(options.scale_predictions),
 						str(initial_sse), 
 						str(prediction_sse), 

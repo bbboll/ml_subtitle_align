@@ -18,7 +18,7 @@ def _get_full_path(*rel_path):
 	return os.path.join(path, *rel_path)
 
 EMBEDDING_DIM = 15
-OUTPUT_DIM = 8*EMBEDDING_DIM # 1500 
+OUTPUT_DIM = 1500 # 8*EMBEDDING_DIM 
 
 class BaseModel(object):
 	"""
